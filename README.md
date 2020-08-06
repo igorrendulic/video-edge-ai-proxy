@@ -96,10 +96,11 @@ TBD: image
 
 - [ ] Finish documentation
 - [ ] Set enable/disabled flag for storage
-- [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only is high FPS on display)
+- [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only if high FPS on display)
 - [ ] Add API key to Chrysalis Cloud for enable/disable storage
 - [ ] Security (grpc TLS Client Authentication)
 - [ ] Security (TLS Client Authentication for web interface)
 - [ ] Security (auto generate redis password)
 - [ ] Configuration (extract configuration for custom port assingnment)
-- [ ] add RTMP support
+- [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)
+- [ ] add v4l2 container support (e.g. Jetson Nano, Raspberry Pi?)
