@@ -1,0 +1,15 @@
+name: chrysedgeai
+channels:
+  - conda-forge
+dependencies:
+  - openssl=1.1.1f=h7b6447c_0
+  - pip=20.0.2=py37_1
+  - python=3.7.7=hcf32534_0_cpython
+  - setuptools=46.1.3=py37_0
+  - wheel=0.34.2=py37_0
+  - av=8.0.2
+  - numpy=1.18.1
+  - redis-py=3.4.1
+  - pip:
+    - grpcio
+    - grpcio-tools

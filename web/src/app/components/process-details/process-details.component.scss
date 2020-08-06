@@ -1,0 +1,51 @@
+// @import 'node_modules/xterm/dist/xterm.css';
+
+.offset-top-20 {
+    margin-top: 20px;
+}
+
+$font-color: #A2A2A2;
+$primary-color: #63B7E6;
+
+mat-card-header{
+  padding: 40px;
+  background: #fefefe;
+  color:$primary-color;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+mat-card-content{
+  padding: 10px;
+}
+
+mat-card{
+  padding:0;
+}
+mat-form-field {
+    min-width: 300px;
+    max-width: 600px;
+    width: 100%;
+    font-size: 16px;
+}
+
+
+#sec {
+  font-family: 'Raleway', sans-serif;
+  padding: 50px 0;
+  background: #fff;
+  text-align: center;
+  word-wrap:break-word;
+
+  .icon {
+    font-size: 40px;
+  }
+
+  h2 {
+    font-weight: 200;
+    font-size: 30px;
+    color: $primary-color;
+  }
+
+}

@@ -1,0 +1,52 @@
+<mat-toolbar class="menu-bar mat-elevation-z1">
+    <button mat-mini-fab color="primary" routerLink="/local/processes">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      &nbsp;&nbsp;&nbsp;
+      <h1>Connect RTSP Camera</h1>
+</mat-toolbar>
+
+<mat-card>
+    <mat-card-content>
+        <mat-error>
+            {{errorMessage}}
+        </mat-error>
+
+        <form [formGroup]="rtspForm" (ngSubmit)="onSubmit()">
+            <p>
+                <mat-form-field appearance="fill" fxFlex="100%">
+                    <mat-label>Name the RTSP Camera</mat-label>
+                    <input matInput formControlName="name" pattern="[a-z_]*">
+                    <mat-error *ngIf="f.name.errors">
+                        Only alpha characters and underscore allowed. Minimum 4 characters.
+                    </mat-error>
+                </mat-form-field>
+            </p>
+            <p>
+                <mat-form-field appearance="fill" fxFlex="100%">
+                    <mat-label>Full RTSP Connection string</mat-label>
+                    <input matInput formControlName="rtsp_endpoint">
+                </mat-form-field>
+            </p>
+            <p>
+                <mat-form-field appearance="fill" fxFlex="100%">
+                    <mat-label>Chrysalis RTMP Endpoint</mat-label>
+                    <input matInput formControlName="rtmp_endpoint">
+                </mat-form-field>
+            </p>
+            <p>
+                <mat-form-field appearance="fill">
+                    <mat-label>Docker Image</mat-label>
+                    <mat-select [value]="tagSelected">
+                      <mat-option *ngFor="let tag of dockerTags" [value]="tag.value">
+                        {{tag.viewValue}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+            </p>
+            <p>
+                <button mat-flat-button color="primary" type="submit">Add</button>
+            </p>
+        </form>
+    </mat-card-content>
+</mat-card>

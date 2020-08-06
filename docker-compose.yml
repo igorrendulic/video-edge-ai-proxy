@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  chrysedgeportal:
+    image: chrysedgeportal:latest
+    build: web/
+    ports:
+      - "80:80"
+    networks:
+      - chrysnet
+  chrysedgeserver:
+    image: chrysedgeserver:latest
+    build: server/
+    entrypoint: /app/main
+    ports:
+      - "8080:8080"
+      - "50001:50001"
+    volumes:
+      - /data/chrysalis:/data/chrysalis
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: 
+      - chrysnet
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    networks: 
+      - chrysnet
+
+networks:
+  chrysnet:
+    name: chrysnet

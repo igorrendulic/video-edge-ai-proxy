@@ -1,0 +1,68 @@
+<!-- <h1 fxHide fxShow.xs>XS</h1>
+<h1 fxHide fxShow.sm>SM</h1>
+<h1 fxHide fxShow.md>MD</h1>
+<h1 fxHide fxShow.lg>LG</h1>
+<h1 fxHide fxShow.xl>XL</h1> -->
+<mat-toolbar class="menu-bar mat-elevation-z1">
+    <h1>RTSP Processes</h1>
+    <div fxFlex></div>
+    &nbsp;
+    <button mat-stroked-button class="icon favorite-icon" color="primary" aria-label="Add new camera" routerLink="/local/addrtsp">
+      <mat-icon>videocam</mat-icon>
+      <span fxHide fxShow.xl fxShow.lg fxShow.md>&nbsp;Connect New RTSP Camera</span>
+    </button>
+</mat-toolbar>
+<div *ngIf="!showProcesses" fxFlex.sm="0 1 100%" fxLayout="column" fxLayoutAlign="center center">
+  <div class="docs-aiexamples-category-list">
+    <a class="docs-aiexamples-category-list-item" routerLink="/local/addrtsp">
+        <div class="docs-aiexamples-list-card">
+            <div class="docs-aiexamples-category-list-card-image-wrapper" style="background-image: url('/assets/screenshots/rtmp_camera.jpg');"></div>
+            <div class="docs-aiexamples-category-list-card-title">Connect RTSP Camera</div>
+            <div class="docs-aiexamples-category-list-card-summary">Create a connection with a RTSP camera on thge Edge</div>
+        </div>
+    </a>
+  </div>
+
+</div>
+ <div *ngIf="showProcesses">
+ <mat-table [dataSource]="processes" class="mat-elevation-z1">
+  <!-- User name Definition -->
+  <ng-container matColumnDef="id">
+    <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+    <mat-cell *matCellDef="let row"> {{row.name}} </mat-cell>
+  </ng-container>
+
+  <!-- Age Definition -->
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef> Image </mat-header-cell>
+    <mat-cell *matCellDef="let row"> {{row.image_tag}} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="status">
+    <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-error' : row.status === 'restarting' }"> {{row.status}} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="created">
+    <mat-header-cell *matHeaderCellDef> Created </mat-header-cell>
+    <mat-cell *matCellDef="let row"> {{row.created | date:'short'}} </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="modified">
+    <mat-header-cell *matHeaderCellDef> Modified </mat-header-cell>
+    <mat-cell *matCellDef="let row"> {{row.modified | date:'short'}} </mat-cell>
+  </ng-container>
+
+  <!-- Disclaimer column -->
+  <ng-container matColumnDef="disclaimer">
+    <td mat-footer-cell *matFooterCellDef colspan="4" class="mat-body" style="vertical-align: middle;">
+      <i>Please note that only you can stream only 1 camera to the Chrysalis cloud in your trial period.</i>
+    </td>
+  </ng-container>
+
+  <!-- Header and Row Declarations -->
+  <mat-header-row *matHeaderRowDef="['id', 'name', 'status','created', 'modified']"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: ['id', 'name', 'status', 'created','modified']" [routerLink]="['/local/process/',row.name]"></mat-row>
+  
+</mat-table>
+</div>

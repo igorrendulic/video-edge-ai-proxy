@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package chrys.cloud.videostreaming.v1beta1;
+
+
+
+message AnnotateRequest {
+
+    float confidence = 1;
+    int64 track_id = 2; 
+    int64 start_timestamp = 3;
+    int64 end_timestamp = 4;
+    string device_name = 5;
+    int64 keyframe = 6;
+    int64 packet = 7;
+}
+
+message ShapeProto {
+    message Dim {
+        // Size of image in that dimension (-1 means unknown dimension)
+        int64 size = 1;
+        // optional name of image dimension
+        string name = 2;
+    }
+
+    repeated Dim dim = 2;
+}
+
+message VideoFrame {
+    int64 width = 1;
+    int64 height = 2;
+    bytes data = 3;
+    int64 timestamp = 4;
+    bool is_keyframe = 5;
+    int64 pts = 6;
+    int64 dts = 7;
+    string frame_type = 8;
+    bool is_corrupt = 9;
+    double time_base = 10;
+    ShapeProto shape = 11;
+    string device_id = 12;
+    int64 packet = 13;
+    int64 keyframe = 14;
+}
+
+message VideoFrameRequest {
+    bool key_frame_only = 1;
+    string device_id = 2;
+}
+
+message ListStream {
+    string name = 1;
+    string status = 2;
+    int64 failing_streak = 3;
+    string health_status = 4;
+    bool dead = 5;
+    int64 exit_code = 6;
+    int32 pid = 7;
+    bool running = 8;
+    bool paused = 9;
+    bool restarting = 10;
+    bool oomkilled = 11;
+    string error = 12;
+}
+message ListStreamRequest {
+}
+
+message StartProxyRequest {
+    string device_id = 1;
+    bool store_video = 2;
+}
+
+message StopProxyRequest {
+    string device_id = 1;
+}
+
+message ProxyResponse {
+    string device_id = 1;
+    bool proxy_stream = 2;
+    bool store_video = 3;
+}
+
+service Image {
+    rpc VideoLatestImage(stream VideoFrameRequest) returns (stream VideoFrame) {}
+    rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}
+    rpc StartProxy(StartProxyRequest) returns (ProxyResponse) {}
+    rpc StopProxy(StopProxyRequest) returns (ProxyResponse) {}
+}

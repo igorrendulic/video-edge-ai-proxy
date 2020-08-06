@@ -1,0 +1,30 @@
+<div class="container" [class.is-mobile]="mobileQuery.matches">
+    <mat-toolbar class="toolbar" color="primary">
+        <!-- <button mat-icon-button (click)="snav.toggle()"><mat-icon>menu</mat-icon></button> -->
+        <h1 class="app-name">Chrysalis Edge Proxy</h1>
+        <span class="spacer"></span>
+        <!-- <button mat-icon-button [matMenuTriggerFor]="accountmenu" aria-label="Account">
+            <mat-icon class="icon" aria-hidden="false" >account_circle</mat-icon>
+        </button> -->
+        <!-- <mat-menu #accountmenu="matMenu">
+            <button mat-menu-item (click)="logout()">      
+                <span >Logout</span>
+            </button>
+        </mat-menu> -->
+    </mat-toolbar>
+  
+    <mat-sidenav-container class="sidenav-container"
+                           [style.marginTop.px]="mobileQuery.matches ? 56 : 0">
+      <mat-sidenav #snav [mode]="mobileQuery.matches ? 'over' : 'side'"
+                   [fixedInViewport]="mobileQuery.matches" fixedTopGap="56">
+
+      </mat-sidenav>
+  
+      <mat-sidenav-content>
+        <div class="main-content">
+            <router-outlet></router-outlet>
+        </div>
+        
+      </mat-sidenav-content>
+    </mat-sidenav-container>
+  </div>
