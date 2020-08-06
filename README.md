@@ -104,3 +104,4 @@ TBD: image
 - [ ] Configuration (extract configuration for custom port assingnment)
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)
 - [ ] add v4l2 container support (e.g. Jetson Nano, Raspberry Pi?)
+- [ ] Initial web screen to pull images (RTSP, RTMP, V4l2)
