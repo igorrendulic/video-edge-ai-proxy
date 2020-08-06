@@ -1,5 +1,7 @@
 # video-edge-ai-proxy
 
+**Currently this repository is under active development!**
+
 The ultimate video pipeline for Computer Vision.
 
 Video Edge-AI Proxy ingests multiple RTSP camera streams and provides a common interface for conducting AI operations on or near the Edge.
