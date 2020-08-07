@@ -106,6 +106,8 @@ Open browser and visit `chrysalisportal` at address: `http://localhost`
 
 ## Portal usage
 
+Open your browser and go to: `http://localhost`
+
 Connecting RTSP camera
 
 1. Click: `Connect RTSP Camera` in the `chrysalisportal` and name the camera (e.g. `test`)
