@@ -14,7 +14,7 @@ client:
 
 examples:
 	@echo "--> Generating Python Proto example files"
-	python3 -m grpc_tools.protoc -I proto/ --python_out=examples/display --grpc_python_out=examples/display proto/video_streaming.proto
+	python3 -m grpc_tools.protoc -I proto/ --python_out=examples/ --grpc_python_out=examples/ proto/video_streaming.proto
 	@echo ""
 
 install: 

@@ -1,14 +1,14 @@
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chrysedgeportal:latest
+    image: chryscloud/chrysedgeportal:0.0.1
     build: web/
     ports:
       - "80:80"
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chrysedgeserver:latest
+    image: chryscloud/chrysedgeserver:0.0.1
     build: server/
     entrypoint: /app/main
     ports:

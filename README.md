@@ -30,7 +30,14 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 * [Prerequisites](#prerequisites)
 * [Quick Start](#quick-start)
-    * [Install](#install)
+    * [How to run](#how-to-run)
+* [Portal usage](#portal-usage)
+* [Client usage](#client-usage)
+* [Examples](#examples)
+  * [Example Prerequisites](#example-prerequisites)
+  * [Running basic_usage.py](#running-basic_usage.py)
+  * [Running opencv_display.py](#running-opencv_display.py)
+* [Build](#build)
 
 ## Prerequisites
 
@@ -39,10 +46,10 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 Pull `rtsp_to_rtmp` docker image from dockerhub to your local computer:
 ```bash
-docker pull chryscloud/chrysedgeproxy:latest
+docker pull chryscloud/chrysedgeproxy:0.0.1
 ```
 
-### Enable docker TCP socket connection (Linux, Ubuntu 18.04 LTS)
+#### Enable docker TCP socket connection (Linux, Ubuntu 18.04 LTS)
 
 Create `daemon.json` file in `/etc/docker` folder and add in:
 ```json
@@ -73,26 +80,137 @@ sudo service docker restart
 
 ## Quick Start
 
-### Install
+By default video-edge-ai-proxy requires these ports:
+- *80* for web portal
+- *8080* for RESTful API (portal API)
+- *50001* for client grpc connection
+- *6379* for redis
 
-Build video-edge-ai-proxy:
+Make sure before your run it that these ports are available.
 
-```bash
-docker-compose build
-```
+### How to run
 
-Run:
+video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
+- */data/chrysalis*
+
+Create the folder if it doesn't exist and make sure it's writtable by docker process.
+
+
+`Start video-edge-ai-proxy`:
 ```bash
 docker-compose -d up
 ```
 
-Open browser and visit `http://localhost`
-
-Insert an RTSP camera
-TBD: image
+Open browser and visit `chrysalisportal` at address: `http://localhost`
 
 
-# TODO
+## Portal usage
+
+Connecting RTSP camera
+
+1. Click: `Connect RTSP Camera` in the `chrysalisportal` and name the camera (e.g. `test`)
+2. Insert full RTSP link (if credentials are required then add them to the link)
+
+Example RTSP url: `rtsp://admin:12345@192.168.1.21/Streaming/Channels/101` where admin is username and 12345 is the password.
+
+Example RTSP url: `rtsp://192.168.1.21:8554/unicast` when no credentials required and non-default port.
+
+Click on the newly created connection and check the output and error log. Expected state is `running` and output `Started python rtsp process...`
+
+We're ready to consume frames from RTSP camera. Check the `/examples` folder.
+
+## Client usage
+
+At this point you should have the video-edge-ai-proxy up and running and your first connection to RTSP camera made.
+
+
+
+## Examples
+
+### Example Prerequisites
+
+Generate python grpc stubs:
+```
+make examples
+```
+
+Create conda environment:
+```
+conda env create -f examples/environment.yml
+```
+
+Activate environment:
+```
+conda activate chrysedgeexamples
+```
+
+### Running `basic_usage.py`
+
+List all stream processes:
+```
+python basic_usage.py --list
+```
+
+Successful output example:
+```
+name: "test"
+status: "running"
+pid: 18109
+running: true
+```
+
+Output single streaming frame information from `test` camera:
+```
+python basic_usage.py --device test
+```
+
+Successful output example:
+```
+is keyframe:  False
+frame type:  P
+frame shape:  dim {
+  size: 480
+  name: "0"
+}
+dim {
+  size: 640
+  name: "1"
+}
+dim {
+  size: 3
+  name: "2"
+}
+```
+
+- is_keyframe (True/False)
+- frame type: (I,P,B)
+- frame shape: image dimensions (always in BGR24 format). In this example: `480x640x3 bgr24`
+
+
+### Running `opencv_display.py`
+
+Display video at original frame rate for `test` camera:
+```
+python opencv_display.py --device test
+```
+
+Display only Keyframes for `test` camera:
+```
+python opencv_display.py --device test --keyframe
+```
+
+
+## Build
+
+Building from source code:
+
+```
+docker-compose build
+```
+
+
+
+# RoadMap
 
 - [ ] Finish documentation
 - [ ] Set enable/disabled flag for storage

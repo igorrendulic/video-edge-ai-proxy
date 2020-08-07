@@ -102,6 +102,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -110,7 +111,7 @@ class Image(object):
             video__streaming__pb2.VideoFrameRequest.SerializeToString,
             video__streaming__pb2.VideoFrame.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ListStreams(request,
@@ -118,6 +119,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -126,7 +128,7 @@ class Image(object):
             video__streaming__pb2.ListStreamRequest.SerializeToString,
             video__streaming__pb2.ListStream.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def StartProxy(request,
@@ -134,6 +136,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -142,7 +145,7 @@ class Image(object):
             video__streaming__pb2.StartProxyRequest.SerializeToString,
             video__streaming__pb2.ProxyResponse.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def StopProxy(request,
@@ -150,6 +153,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -158,4 +162,4 @@ class Image(object):
             video__streaming__pb2.StopProxyRequest.SerializeToString,
             video__streaming__pb2.ProxyResponse.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

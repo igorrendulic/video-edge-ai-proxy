@@ -49,7 +49,7 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 	}
 	// default docker image (must be pulled manually for now)
 	if process.ImageTag == "" {
-		process.ImageTag = "chryscloud/chrysedgeproxy:latest"
+		process.ImageTag = "chryscloud/chrysedgeproxy:0.0.1"
 	}
 
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
