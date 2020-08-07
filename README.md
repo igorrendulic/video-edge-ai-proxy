@@ -117,6 +117,10 @@ Example RTSP url: `rtsp://192.168.1.21:8554/unicast` when no credentials require
 
 Click on the newly created connection and check the output and error log. Expected state is `running` and output `Started python rtsp process...`
 
+<p align="center">
+    <img src="https://storage.googleapis.com/chrysaliswebassets/chrys_edge_proxy_test_cam.png" title="Chrysalis Edge Proxy test cam" />
+<p align="center">
+
 We're ready to consume frames from RTSP camera. Check the `/examples` folder.
 
 ## Client usage
