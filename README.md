@@ -228,3 +228,28 @@ docker-compose build
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)
 - [ ] add v4l2 container support (e.g. Jetson Nano, Raspberry Pi?)
 - [ ] Initial web screen to pull images (RTSP, RTMP, V4l2)
+
+# Contributing
+
+Please read `CONTRIBUTING.md` for details on our code of conduct, and the process of submitting pull requests to us. 
+
+# Versioning
+
+Current version is initial release - v1.0.0
+
+# Authors
+
+- **Igor Rendulic** - Initial work - [Chrysalis Cloud](https://chryscloud.com)
+
+# License
+
+This project is licensed under Apache 2.0 License - see the `LICENSE` for details.
+
+
+# Acknowledgments
+
+<p align="left">
+    <img src="https://storage.googleapis.com/chrysaliswebassets/logo_small.png" style="width: 300px;" title="Chrysalis Cloud" />
+
+
+
