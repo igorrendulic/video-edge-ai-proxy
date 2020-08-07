@@ -215,10 +215,9 @@ docker-compose build
 ```
 
 
-
 # RoadMap
 
-- [ ] Finish documentation
+- [X] Finish documentation
 - [ ] Set enable/disabled flag for storage
 - [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only if high FPS on display)
 - [ ] Add API key to Chrysalis Cloud for enable/disable storage
