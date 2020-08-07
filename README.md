@@ -235,7 +235,7 @@ Please read `CONTRIBUTING.md` for details on our code of conduct, and the proces
 
 # Versioning
 
-Current version is initial release - v1.0.0
+Current version is initial release - v0.0.1 prerelease
 
 # Authors
 
