@@ -5,6 +5,7 @@ import { AuthGuard } from './interceptors/auth.interceptor';
 import { ProcessesComponent } from './components/processes/processes.component';
 import { ProcessDetailsComponent } from './components/process-details/process-details.component';
 import { ProcessAddComponent } from './components/process-add/process-add.component';
+import { SettingsComponent } from './components/settings/settings.component';
 
 
 const routes: Routes = [
@@ -14,6 +15,7 @@ const routes: Routes = [
       { path: "processes", component: ProcessesComponent},
       { path: "process/:name", component: ProcessDetailsComponent},
       { path: "addrtsp", component: ProcessAddComponent},
+      { path: "settings", component: SettingsComponent}
     ]
   }
 ];

@@ -3,10 +3,13 @@
         <!-- <button mat-icon-button (click)="snav.toggle()"><mat-icon>menu</mat-icon></button> -->
         <h1 class="app-name">Chrysalis Edge Proxy</h1>
         <span class="spacer"></span>
+        <button mat-icon-button aria-label="Settings" routerLink="/local/settings">
+            <mat-icon class="icon">settings</mat-icon>
+        </button>
         <!-- <button mat-icon-button [matMenuTriggerFor]="accountmenu" aria-label="Account">
             <mat-icon class="icon" aria-hidden="false" >account_circle</mat-icon>
-        </button> -->
-        <!-- <mat-menu #accountmenu="matMenu">
+        </button>
+        <mat-menu #accountmenu="matMenu">
             <button mat-menu-item (click)="logout()">      
                 <span >Logout</span>
             </button>

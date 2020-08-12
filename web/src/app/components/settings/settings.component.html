@@ -1,0 +1,48 @@
+<mat-toolbar class="menu-bar mat-elevation-z1">
+    <button mat-mini-fab color="primary" (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div fxFlex></div>
+    <h1>Edge Settings</h1>
+    <div fxFlex></div>
+</mat-toolbar>
+
+<div fxFlexLayout="row wrap" fxLayout.sm="column" fxLayout.xs="column" fxLayoutGap="10px" fxLayoutAlign="flex-start">
+    <mat-card  fxFlex="1 2 calc(15em + 20px)">
+        <mat-card-header>
+            <mat-card-title>Chrysalis Cloud Connection Settings</mat-card-title>
+          </mat-card-header>
+        <mat-card-content>
+            <p>Register at <a href="https://chryscloud.com" target="_blank">Chrysalis Developer Portal</a> to get the Edge Key</p>
+            <form [formGroup]="settingsForm">
+                <p>
+                    <mat-error *ngIf="errorMessage">
+                        {{errorMessage}}
+                    </mat-error>
+                </p>
+                <p>
+                    <mat-form-field appearance="fill" fxFlex="100%">
+                        <mat-label>Edge API Key</mat-label>
+                        <input matInput [type]="showEdgeKey ? 'text' : 'password'" formControlName="edge_key" value="{{settings.edge_key}}">
+                        <button mat-button matSuffix mat-icon-button (click)="showEdgeKey = !showEdgeKey">
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+                    </mat-form-field>
+                </p>
+                <div>
+                    <button mat-flat-button color="primary" (click)="onSubmit()">Update</button>&nbsp;
+                </div>
+                <p style="margin-top: 50px;">
+                    <mat-expansion-panel hideToggle>
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            Why do I need Edge API Key?
+                          </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <p>The annotations are sent to Chrysalis Cloud and stored in our data warehouse from where you can query the sent annotations.</p>
+                      </mat-expansion-panel>
+                </p>
+            </form>
+        </mat-card-content>
+    </mat-card>
+</div>

@@ -4,6 +4,7 @@ import { environment } from 'src/environments/environment';
 import { Observable } from 'rxjs';
 import { StreamProcess } from '../models/StreamProcess';
 import { RTSP } from '../models/RTSP';
+import { Settings } from '../models/Settings';
 
 @Injectable({
   providedIn: 'root'
@@ -30,5 +31,13 @@ export class EdgeService {
 
   rtspScan(ipRange:RTSP):Observable<[RTSP]> {
     return this.http.post<[RTSP]>(environment.LocalServerURL + "/api/v1/rtspscan", ipRange);
+  }
+
+  getSettings():Observable<Settings> {
+    return this.http.get<Settings>(environment.LocalServerURL + "/api/v1/settings");
+  }
+
+  overwriteSettings(settings:Settings) {
+    return this.http.post<Settings>(environment.LocalServerURL + "/api/v1/settings", settings);
   }
 }

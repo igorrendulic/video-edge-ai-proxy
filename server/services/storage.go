@@ -46,6 +46,9 @@ func (s *Storage) Get(prefix, key string) ([]byte, error) {
 	var valCopy []byte
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(prefix + key))
+		if err != nil {
+			return err
+		}
 		valCopy, err = item.ValueCopy(nil)
 		return err
 	})

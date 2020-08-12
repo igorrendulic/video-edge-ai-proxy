@@ -84,18 +84,19 @@ func main() {
 
 	// Services
 	processService := services.NewProcessManager(storage)
+	settingsService := services.NewSettingsManager(storage)
 
 	gin.SetMode(conf.Mode)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)
-	router = r.ConfigAPI(router, processService)
+	router = r.ConfigAPI(router, processService, settingsService)
 
 	// start server
 	srv := msrv.Start(&conf.YamlConfig, router, g.Log)
 	// wait for server shutdown
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
-	go startGrpcServer(processService)
+	go startGrpcServer(processService, settingsService)
 	go shutdownGrpc(quit, done)
 
 	g.Log.Info("Server is ready to handle requests at", g.Conf.Port)
@@ -109,7 +110,7 @@ func main() {
 	g.Log.Info("exit")
 }
 
-func startGrpcServer(processManager *services.ProcessManager) error {
+func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager) error {
 	conn, err := net.Listen("tcp", "0.0.0.0:50001") // TODO: take from conf.yaml file
 	if err != nil {
 		g.Log.Error("Failed to open grpc connection", err)
@@ -118,7 +119,7 @@ func startGrpcServer(processManager *services.ProcessManager) error {
 	grpcConn = conn
 	grpcServer = grpc.NewServer()
 
-	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processManager))
+	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService))
 	g.Log.Info("Grpc Servier is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }

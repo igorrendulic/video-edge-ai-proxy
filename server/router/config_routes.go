@@ -22,7 +22,7 @@ import (
 )
 
 // ConfigAPI - configuring RESTapi services
-func ConfigAPI(router *gin.Engine, processService *services.ProcessManager) *gin.Engine {
+func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, settingsService *services.SettingsManager) *gin.Engine {
 
 	// if g.Conf.CorsSubConfig.Enabled {
 	router.Use(cors.New(cors.Config{
@@ -34,6 +34,7 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager) *gin
 
 	// APIs
 	processAPI := api.NewRTSPProcessHandler(processService)
+	settingsAPI := api.NewSettingsHandler(settingsService)
 
 	api := router.Group("/api/v1")
 	{
@@ -41,6 +42,8 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager) *gin
 		api.DELETE("process/:name", processAPI.Stop)
 		api.GET("process/:name", processAPI.Info)
 		api.GET("processlist", processAPI.List)
+		api.GET("settings", settingsAPI.Get)
+		api.POST("settings", settingsAPI.Overwrite)
 	}
 
 	return router

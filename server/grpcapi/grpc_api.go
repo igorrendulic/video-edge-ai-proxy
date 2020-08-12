@@ -21,6 +21,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chryscloud/go-microkit-plugins/backpressure"
+	"github.com/chryscloud/video-edge-ai-proxy/batch"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
@@ -32,22 +34,27 @@ import (
 )
 
 type grpcImageHandler struct {
-	redisConn      *redis.Client
-	deviceMap      sync.Map
-	processManager *services.ProcessManager
+	redisConn       *redis.Client
+	deviceMap       sync.Map
+	processManager  *services.ProcessManager
+	settingsManager *services.SettingsManager
+	edgeKey         *string
+	batching        *backpressure.PressureContext
 }
 
 // NewGrpcImageHandler returns main GRPC API handler
-func NewGrpcImageHandler(processManager *services.ProcessManager) *grpcImageHandler {
+func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager) *grpcImageHandler {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "redis:6379",
 		Password: "", // TODO: set redis password and use it here
 		DB:       0,  // use default DB
 	})
 	return &grpcImageHandler{
-		redisConn:      rdb,
-		deviceMap:      sync.Map{},
-		processManager: processManager,
+		redisConn:       rdb,
+		deviceMap:       sync.Map{},
+		processManager:  processManager,
+		settingsManager: settingsManager,
+		batching:        batch.NewChrysBatchWorker(),
 	}
 }
 

@@ -34,6 +34,11 @@ class ImageStub(object):
                 request_serializer=video__streaming__pb2.StopProxyRequest.SerializeToString,
                 response_deserializer=video__streaming__pb2.ProxyResponse.FromString,
                 )
+        self.Annotate = channel.unary_unary(
+                '/chrys.cloud.videostreaming.v1beta1.Image/Annotate',
+                request_serializer=video__streaming__pb2.AnnotateRequest.SerializeToString,
+                response_deserializer=video__streaming__pb2.AnnotateResponse.FromString,
+                )
 
 
 class ImageServicer(object):
@@ -63,6 +68,12 @@ class ImageServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Annotate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ImageServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -85,6 +96,11 @@ def add_ImageServicer_to_server(servicer, server):
                     servicer.StopProxy,
                     request_deserializer=video__streaming__pb2.StopProxyRequest.FromString,
                     response_serializer=video__streaming__pb2.ProxyResponse.SerializeToString,
+            ),
+            'Annotate': grpc.unary_unary_rpc_method_handler(
+                    servicer.Annotate,
+                    request_deserializer=video__streaming__pb2.AnnotateRequest.FromString,
+                    response_serializer=video__streaming__pb2.AnnotateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -157,5 +173,21 @@ class Image(object):
         return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/StopProxy',
             video__streaming__pb2.StopProxyRequest.SerializeToString,
             video__streaming__pb2.ProxyResponse.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Annotate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/Annotate',
+            video__streaming__pb2.AnnotateRequest.SerializeToString,
+            video__streaming__pb2.AnnotateResponse.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

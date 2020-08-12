@@ -2,17 +2,74 @@ syntax = "proto3";
 
 package chrys.cloud.videostreaming.v1beta1;
 
-
-
 message AnnotateRequest {
 
-    float confidence = 1;
-    int64 track_id = 2; 
-    int64 start_timestamp = 3;
-    int64 end_timestamp = 4;
-    string device_name = 5;
-    int64 keyframe = 6;
-    int64 packet = 7;
+    string device_name = 1; // required: device name (required) identity of device
+    string remote_stream_id = 2; //optional: if associated with storage, the ID of Chrysalis Cloud deviceID
+    string type = 3; // required: event type: e.g. moving, exit, entry, stopped, parked, ...
+    int64 start_timestamp = 4; //required: start of the event
+    int64 end_timestamp = 5; // optional: event of the event
+    string object_type = 6; // optional: e.g. person, car, face, bag, roadsign,...
+    string object_id = 7; // optional: e.g. object id from the ML model
+    string object_tracking_id = 8; // optional: tracking id of the object
+    double confidence = 9; // confidence of inference [0-1.0]
+    BoudingBox object_bouding_box = 10; // optional: object bounding box
+    Location location = 11; // optional: object GEO location
+    Coordinate object_coordinate = 12; // optional: object coordinates within the image
+    repeated Coordinate mask = 13; // optional" object mask (polygon)
+    repeated double object_signature = 14; // optional: signature of the detected item
+    string ml_model = 15; // optional: description of the module that generated this event
+    string ml_model_version = 16; // optional: version of the ML model
+    int32 width = 17; // optional: image width
+    int32 height = 18; // optional: image height
+    bool is_keyframe = 19; // optional: true/false if this annotation is from keyframe
+    string video_type = 20; // optional: e.g. mp4 filename, live stream, ...
+    int64 offset_timestamp = 21; // optional: offset from the beginning
+    int64 offset_duration = 22; // optional: duration from the offset
+    int64 offset_frame_id = 23; // optional: frame id of the 
+    int64 offset_packet_id = 24; // optional: offset of the packet
+
+    // extending the event message meta data (optional)
+    string custom_meta_1 = 25; // e.g. gender, hair, car model, ...
+    string custom_meta_2 = 26;
+    string custom_meta_3 = 27;
+    string custom_meta_4 = 28;
+    string custom_meta_5 = 29;
+    int64 custom_meta_6 = 30; // e.g. persons age, height
+    int64 custom_meta_7 = 31; 
+    int64 custom_meta_8 = 32; 
+    int64 custom_meta_9 = 33; 
+    int64 custom_meta_10 = 34;
+    
+    // custom payload attached to the event
+    bytes custom_payload = 35; 
+}
+
+message AnnotateResponse {
+    string device_name = 1;
+    string remote_stream_id = 2;
+    string type = 3;
+    int64 start_timestamp = 4;
+}
+
+message Location {
+    double lat = 1; // latitude
+    double lon = 2; // longitude
+    double alt = 3; // altitude
+    string description = 4; // location description
+}
+
+message Coordinate {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+
+message BoudingBox {
+    int32 top = 1;
+    int32 left = 2;
+    int32 width = 3;
+    int32 height = 4;
 }
 
 message ShapeProto {
@@ -85,4 +142,5 @@ service Image {
     rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}
     rpc StartProxy(StartProxyRequest) returns (ProxyResponse) {}
     rpc StopProxy(StopProxyRequest) returns (ProxyResponse) {}
+    rpc Annotate(AnnotateRequest) returns (AnnotateResponse) {}
 }

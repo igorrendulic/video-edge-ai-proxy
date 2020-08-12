@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x15video_streaming.proto\x12\"chrys.cloud.videostreaming.v1beta1\"\x9e\x01\n\x0f\x41nnotateRequest\x12\x12\n\nconfidence\x18\x01 \x01(\x02\x12\x10\n\x08track_id\x18\x02 \x01(\x03\x12\x17\n\x0fstart_timestamp\x18\x03 \x01(\x03\x12\x15\n\rend_timestamp\x18\x04 \x01(\x03\x12\x13\n\x0b\x64\x65vice_name\x18\x05 \x01(\t\x12\x10\n\x08keyframe\x18\x06 \x01(\x03\x12\x0e\n\x06packet\x18\x07 \x01(\x03\"p\n\nShapeProto\x12?\n\x03\x64im\x18\x02 \x03(\x0b\x32\x32.chrys.cloud.videostreaming.v1beta1.ShapeProto.Dim\x1a!\n\x03\x44im\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\"\xaa\x02\n\nVideoFrame\x12\r\n\x05width\x18\x01 \x01(\x03\x12\x0e\n\x06height\x18\x02 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\x12\x13\n\x0bis_keyframe\x18\x05 \x01(\x08\x12\x0b\n\x03pts\x18\x06 \x01(\x03\x12\x0b\n\x03\x64ts\x18\x07 \x01(\x03\x12\x12\n\nframe_type\x18\x08 \x01(\t\x12\x12\n\nis_corrupt\x18\t \x01(\x08\x12\x11\n\ttime_base\x18\n \x01(\x01\x12=\n\x05shape\x18\x0b \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.ShapeProto\x12\x11\n\tdevice_id\x18\x0c \x01(\t\x12\x0e\n\x06packet\x18\r \x01(\x03\x12\x10\n\x08keyframe\x18\x0e \x01(\x03\">\n\x11VideoFrameRequest\x12\x16\n\x0ekey_frame_only\x18\x01 \x01(\x08\x12\x11\n\tdevice_id\x18\x02 \x01(\t\"\xde\x01\n\nListStream\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0e\x66\x61iling_streak\x18\x03 \x01(\x03\x12\x15\n\rhealth_status\x18\x04 \x01(\t\x12\x0c\n\x04\x64\x65\x61\x64\x18\x05 \x01(\x08\x12\x11\n\texit_code\x18\x06 \x01(\x03\x12\x0b\n\x03pid\x18\x07 \x01(\x05\x12\x0f\n\x07running\x18\x08 \x01(\x08\x12\x0e\n\x06paused\x18\t \x01(\x08\x12\x12\n\nrestarting\x18\n \x01(\x08\x12\x11\n\toomkilled\x18\x0b \x01(\x08\x12\r\n\x05\x65rror\x18\x0c \x01(\t\"\x13\n\x11ListStreamRequest\";\n\x11StartProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bstore_video\x18\x02 \x01(\x08\"%\n\x10StopProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"M\n\rProxyResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x14\n\x0cproxy_stream\x18\x02 \x01(\x08\x12\x13\n\x0bstore_video\x18\x03 \x01(\x08\x32\xf4\x03\n\x05Image\x12\x7f\n\x10VideoLatestImage\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoFrameRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00(\x01\x30\x01\x12x\n\x0bListStreams\x12\x35.chrys.cloud.videostreaming.v1beta1.ListStreamRequest\x1a..chrys.cloud.videostreaming.v1beta1.ListStream\"\x00\x30\x01\x12x\n\nStartProxy\x12\x35.chrys.cloud.videostreaming.v1beta1.StartProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x12v\n\tStopProxy\x12\x34.chrys.cloud.videostreaming.v1beta1.StopProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x15video_streaming.proto\x12\"chrys.cloud.videostreaming.v1beta1\"\xc5\x07\n\x0f\x41nnotateRequest\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\x12\x15\n\rend_timestamp\x18\x05 \x01(\x03\x12\x13\n\x0bobject_type\x18\x06 \x01(\t\x12\x11\n\tobject_id\x18\x07 \x01(\t\x12\x1a\n\x12object_tracking_id\x18\x08 \x01(\t\x12\x12\n\nconfidence\x18\t \x01(\x01\x12J\n\x12object_bouding_box\x18\n \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.BoudingBox\x12>\n\x08location\x18\x0b \x01(\x0b\x32,.chrys.cloud.videostreaming.v1beta1.Location\x12I\n\x11object_coordinate\x18\x0c \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12<\n\x04mask\x18\r \x03(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12\x18\n\x10object_signature\x18\x0e \x03(\x01\x12\x10\n\x08ml_model\x18\x0f \x01(\t\x12\x18\n\x10ml_model_version\x18\x10 \x01(\t\x12\r\n\x05width\x18\x11 \x01(\x05\x12\x0e\n\x06height\x18\x12 \x01(\x05\x12\x13\n\x0bis_keyframe\x18\x13 \x01(\x08\x12\x12\n\nvideo_type\x18\x14 \x01(\t\x12\x18\n\x10offset_timestamp\x18\x15 \x01(\x03\x12\x17\n\x0foffset_frame_id\x18\x16 \x01(\x03\x12\x18\n\x10offset_packet_id\x18\x17 \x01(\x03\x12\x15\n\rcustom_meta_1\x18\x18 \x01(\t\x12\x15\n\rcustom_meta_2\x18\x19 \x01(\t\x12\x15\n\rcustom_meta_3\x18\x1a \x01(\t\x12\x15\n\rcustom_meta_4\x18\x1b \x01(\t\x12\x15\n\rcustom_meta_5\x18\x1c \x01(\t\x12\x15\n\rcustom_meta_6\x18\x1d \x01(\x03\x12\x15\n\rcustom_meta_7\x18\x1e \x01(\x03\x12\x15\n\rcustom_meta_8\x18\x1f \x01(\x03\x12\x15\n\rcustom_meta_9\x18  \x01(\x03\x12\x16\n\x0e\x63ustom_meta_10\x18! \x01(\x03\x12\x16\n\x0e\x63ustom_payload\x18\" \x01(\x0c\"h\n\x10\x41nnotateResponse\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\"F\n\x08Location\x12\x0b\n\x03lat\x18\x01 \x01(\x01\x12\x0b\n\x03lon\x18\x02 \x01(\x01\x12\x0b\n\x03\x61lt\x18\x03 \x01(\x01\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\"-\n\nCoordinate\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"F\n\nBoudingBox\x12\x0b\n\x03top\x18\x01 \x01(\x05\x12\x0c\n\x04left\x18\x02 \x01(\x05\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\"p\n\nShapeProto\x12?\n\x03\x64im\x18\x02 \x03(\x0b\x32\x32.chrys.cloud.videostreaming.v1beta1.ShapeProto.Dim\x1a!\n\x03\x44im\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\"\xaa\x02\n\nVideoFrame\x12\r\n\x05width\x18\x01 \x01(\x03\x12\x0e\n\x06height\x18\x02 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\x12\x13\n\x0bis_keyframe\x18\x05 \x01(\x08\x12\x0b\n\x03pts\x18\x06 \x01(\x03\x12\x0b\n\x03\x64ts\x18\x07 \x01(\x03\x12\x12\n\nframe_type\x18\x08 \x01(\t\x12\x12\n\nis_corrupt\x18\t \x01(\x08\x12\x11\n\ttime_base\x18\n \x01(\x01\x12=\n\x05shape\x18\x0b \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.ShapeProto\x12\x11\n\tdevice_id\x18\x0c \x01(\t\x12\x0e\n\x06packet\x18\r \x01(\x03\x12\x10\n\x08keyframe\x18\x0e \x01(\x03\">\n\x11VideoFrameRequest\x12\x16\n\x0ekey_frame_only\x18\x01 \x01(\x08\x12\x11\n\tdevice_id\x18\x02 \x01(\t\"\xde\x01\n\nListStream\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0e\x66\x61iling_streak\x18\x03 \x01(\x03\x12\x15\n\rhealth_status\x18\x04 \x01(\t\x12\x0c\n\x04\x64\x65\x61\x64\x18\x05 \x01(\x08\x12\x11\n\texit_code\x18\x06 \x01(\x03\x12\x0b\n\x03pid\x18\x07 \x01(\x05\x12\x0f\n\x07running\x18\x08 \x01(\x08\x12\x0e\n\x06paused\x18\t \x01(\x08\x12\x12\n\nrestarting\x18\n \x01(\x08\x12\x11\n\toomkilled\x18\x0b \x01(\x08\x12\r\n\x05\x65rror\x18\x0c \x01(\t\"\x13\n\x11ListStreamRequest\";\n\x11StartProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bstore_video\x18\x02 \x01(\x08\"%\n\x10StopProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"M\n\rProxyResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x14\n\x0cproxy_stream\x18\x02 \x01(\x08\x12\x13\n\x0bstore_video\x18\x03 \x01(\x08\x32\xed\x04\n\x05Image\x12\x7f\n\x10VideoLatestImage\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoFrameRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00(\x01\x30\x01\x12x\n\x0bListStreams\x12\x35.chrys.cloud.videostreaming.v1beta1.ListStreamRequest\x1a..chrys.cloud.videostreaming.v1beta1.ListStream\"\x00\x30\x01\x12x\n\nStartProxy\x12\x35.chrys.cloud.videostreaming.v1beta1.StartProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x12v\n\tStopProxy\x12\x34.chrys.cloud.videostreaming.v1beta1.StopProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x12w\n\x08\x41nnotate\x12\x33.chrys.cloud.videostreaming.v1beta1.AnnotateRequest\x1a\x34.chrys.cloud.videostreaming.v1beta1.AnnotateResponse\"\x00\x62\x06proto3'
 )
 
 
@@ -34,51 +34,240 @@ _ANNOTATEREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='confidence', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.confidence', index=0,
-      number=1, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
+      name='device_name', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.device_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='track_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.track_id', index=1,
-      number=2, type=3, cpp_type=2, label=1,
-      has_default_value=False, default_value=0,
+      name='remote_stream_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.remote_stream_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='start_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.start_timestamp', index=2,
-      number=3, type=3, cpp_type=2, label=1,
-      has_default_value=False, default_value=0,
+      name='type', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.type', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='end_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.end_timestamp', index=3,
+      name='start_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.start_timestamp', index=3,
       number=4, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='device_name', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.device_name', index=4,
-      number=5, type=9, cpp_type=9, label=1,
+      name='end_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.end_timestamp', index=4,
+      number=5, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='object_type', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_type', index=5,
+      number=6, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='keyframe', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.keyframe', index=5,
-      number=6, type=3, cpp_type=2, label=1,
+      name='object_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_id', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='object_tracking_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_tracking_id', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='confidence', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.confidence', index=8,
+      number=9, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='object_bouding_box', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_bouding_box', index=9,
+      number=10, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='location', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.location', index=10,
+      number=11, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='object_coordinate', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_coordinate', index=11,
+      number=12, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='mask', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.mask', index=12,
+      number=13, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='object_signature', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.object_signature', index=13,
+      number=14, type=1, cpp_type=5, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ml_model', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.ml_model', index=14,
+      number=15, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ml_model_version', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.ml_model_version', index=15,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='width', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.width', index=16,
+      number=17, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='packet', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.packet', index=6,
-      number=7, type=3, cpp_type=2, label=1,
+      name='height', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.height', index=17,
+      number=18, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='is_keyframe', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.is_keyframe', index=18,
+      number=19, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='video_type', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.video_type', index=19,
+      number=20, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='offset_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.offset_timestamp', index=20,
+      number=21, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='offset_frame_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.offset_frame_id', index=21,
+      number=22, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='offset_packet_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.offset_packet_id', index=22,
+      number=23, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_1', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_1', index=23,
+      number=24, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_2', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_2', index=24,
+      number=25, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_3', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_3', index=25,
+      number=26, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_4', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_4', index=26,
+      number=27, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_5', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_5', index=27,
+      number=28, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_6', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_6', index=28,
+      number=29, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_7', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_7', index=29,
+      number=30, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_8', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_8', index=30,
+      number=31, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_9', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_9', index=31,
+      number=32, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_meta_10', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_meta_10', index=32,
+      number=33, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='custom_payload', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateRequest.custom_payload', index=33,
+      number=34, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -95,7 +284,212 @@ _ANNOTATEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=62,
-  serialized_end=220,
+  serialized_end=1027,
+)
+
+
+_ANNOTATERESPONSE = _descriptor.Descriptor(
+  name='AnnotateResponse',
+  full_name='chrys.cloud.videostreaming.v1beta1.AnnotateResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='device_name', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateResponse.device_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='remote_stream_id', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateResponse.remote_stream_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateResponse.type', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='start_timestamp', full_name='chrys.cloud.videostreaming.v1beta1.AnnotateResponse.start_timestamp', index=3,
+      number=4, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1029,
+  serialized_end=1133,
+)
+
+
+_LOCATION = _descriptor.Descriptor(
+  name='Location',
+  full_name='chrys.cloud.videostreaming.v1beta1.Location',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='lat', full_name='chrys.cloud.videostreaming.v1beta1.Location.lat', index=0,
+      number=1, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='lon', full_name='chrys.cloud.videostreaming.v1beta1.Location.lon', index=1,
+      number=2, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='alt', full_name='chrys.cloud.videostreaming.v1beta1.Location.alt', index=2,
+      number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='description', full_name='chrys.cloud.videostreaming.v1beta1.Location.description', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1135,
+  serialized_end=1205,
+)
+
+
+_COORDINATE = _descriptor.Descriptor(
+  name='Coordinate',
+  full_name='chrys.cloud.videostreaming.v1beta1.Coordinate',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='x', full_name='chrys.cloud.videostreaming.v1beta1.Coordinate.x', index=0,
+      number=1, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='y', full_name='chrys.cloud.videostreaming.v1beta1.Coordinate.y', index=1,
+      number=2, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='z', full_name='chrys.cloud.videostreaming.v1beta1.Coordinate.z', index=2,
+      number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1207,
+  serialized_end=1252,
+)
+
+
+_BOUDINGBOX = _descriptor.Descriptor(
+  name='BoudingBox',
+  full_name='chrys.cloud.videostreaming.v1beta1.BoudingBox',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='top', full_name='chrys.cloud.videostreaming.v1beta1.BoudingBox.top', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='left', full_name='chrys.cloud.videostreaming.v1beta1.BoudingBox.left', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='width', full_name='chrys.cloud.videostreaming.v1beta1.BoudingBox.width', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='height', full_name='chrys.cloud.videostreaming.v1beta1.BoudingBox.height', index=3,
+      number=4, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1254,
+  serialized_end=1324,
 )
 
 
@@ -133,8 +527,8 @@ _SHAPEPROTO_DIM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=301,
-  serialized_end=334,
+  serialized_start=1405,
+  serialized_end=1438,
 )
 
 _SHAPEPROTO = _descriptor.Descriptor(
@@ -164,8 +558,8 @@ _SHAPEPROTO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=222,
-  serialized_end=334,
+  serialized_start=1326,
+  serialized_end=1438,
 )
 
 
@@ -287,8 +681,8 @@ _VIDEOFRAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=337,
-  serialized_end=635,
+  serialized_start=1441,
+  serialized_end=1739,
 )
 
 
@@ -326,8 +720,8 @@ _VIDEOFRAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=637,
-  serialized_end=699,
+  serialized_start=1741,
+  serialized_end=1803,
 )
 
 
@@ -435,8 +829,8 @@ _LISTSTREAM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=702,
-  serialized_end=924,
+  serialized_start=1806,
+  serialized_end=2028,
 )
 
 
@@ -460,8 +854,8 @@ _LISTSTREAMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=926,
-  serialized_end=945,
+  serialized_start=2030,
+  serialized_end=2049,
 )
 
 
@@ -499,8 +893,8 @@ _STARTPROXYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=947,
-  serialized_end=1006,
+  serialized_start=2051,
+  serialized_end=2110,
 )
 
 
@@ -531,8 +925,8 @@ _STOPPROXYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1008,
-  serialized_end=1045,
+  serialized_start=2112,
+  serialized_end=2149,
 )
 
 
@@ -577,14 +971,22 @@ _PROXYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1047,
-  serialized_end=1124,
+  serialized_start=2151,
+  serialized_end=2228,
 )
 
+_ANNOTATEREQUEST.fields_by_name['object_bouding_box'].message_type = _BOUDINGBOX
+_ANNOTATEREQUEST.fields_by_name['location'].message_type = _LOCATION
+_ANNOTATEREQUEST.fields_by_name['object_coordinate'].message_type = _COORDINATE
+_ANNOTATEREQUEST.fields_by_name['mask'].message_type = _COORDINATE
 _SHAPEPROTO_DIM.containing_type = _SHAPEPROTO
 _SHAPEPROTO.fields_by_name['dim'].message_type = _SHAPEPROTO_DIM
 _VIDEOFRAME.fields_by_name['shape'].message_type = _SHAPEPROTO
 DESCRIPTOR.message_types_by_name['AnnotateRequest'] = _ANNOTATEREQUEST
+DESCRIPTOR.message_types_by_name['AnnotateResponse'] = _ANNOTATERESPONSE
+DESCRIPTOR.message_types_by_name['Location'] = _LOCATION
+DESCRIPTOR.message_types_by_name['Coordinate'] = _COORDINATE
+DESCRIPTOR.message_types_by_name['BoudingBox'] = _BOUDINGBOX
 DESCRIPTOR.message_types_by_name['ShapeProto'] = _SHAPEPROTO
 DESCRIPTOR.message_types_by_name['VideoFrame'] = _VIDEOFRAME
 DESCRIPTOR.message_types_by_name['VideoFrameRequest'] = _VIDEOFRAMEREQUEST
@@ -601,6 +1003,34 @@ AnnotateRequest = _reflection.GeneratedProtocolMessageType('AnnotateRequest', (_
   # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.AnnotateRequest)
   })
 _sym_db.RegisterMessage(AnnotateRequest)
+
+AnnotateResponse = _reflection.GeneratedProtocolMessageType('AnnotateResponse', (_message.Message,), {
+  'DESCRIPTOR' : _ANNOTATERESPONSE,
+  '__module__' : 'video_streaming_pb2'
+  # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.AnnotateResponse)
+  })
+_sym_db.RegisterMessage(AnnotateResponse)
+
+Location = _reflection.GeneratedProtocolMessageType('Location', (_message.Message,), {
+  'DESCRIPTOR' : _LOCATION,
+  '__module__' : 'video_streaming_pb2'
+  # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.Location)
+  })
+_sym_db.RegisterMessage(Location)
+
+Coordinate = _reflection.GeneratedProtocolMessageType('Coordinate', (_message.Message,), {
+  'DESCRIPTOR' : _COORDINATE,
+  '__module__' : 'video_streaming_pb2'
+  # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.Coordinate)
+  })
+_sym_db.RegisterMessage(Coordinate)
+
+BoudingBox = _reflection.GeneratedProtocolMessageType('BoudingBox', (_message.Message,), {
+  'DESCRIPTOR' : _BOUDINGBOX,
+  '__module__' : 'video_streaming_pb2'
+  # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.BoudingBox)
+  })
+_sym_db.RegisterMessage(BoudingBox)
 
 ShapeProto = _reflection.GeneratedProtocolMessageType('ShapeProto', (_message.Message,), {
 
@@ -675,8 +1105,8 @@ _IMAGE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1127,
-  serialized_end=1627,
+  serialized_start=2231,
+  serialized_end=2852,
   methods=[
   _descriptor.MethodDescriptor(
     name='VideoLatestImage',
@@ -715,6 +1145,16 @@ _IMAGE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_STOPPROXYREQUEST,
     output_type=_PROXYRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Annotate',
+    full_name='chrys.cloud.videostreaming.v1beta1.Image.Annotate',
+    index=4,
+    containing_service=None,
+    input_type=_ANNOTATEREQUEST,
+    output_type=_ANNOTATERESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

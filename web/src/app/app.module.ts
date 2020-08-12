@@ -17,6 +17,7 @@ import { ProcessesComponent } from './components/processes/processes.component';
 import { ProcessDetailsComponent } from './components/process-details/process-details.component';
 import { ProcessAddComponent } from './components/process-add/process-add.component';
 import { ConfirmDialogComponent } from './components/shared/confirm-dialog/confirm-dialog.component';
+import { SettingsComponent } from './components/settings/settings.component';
 
 const bullets = [{
   Title: 'Quick and free sign-up',
@@ -44,6 +45,7 @@ const bullets = [{
     ProcessDetailsComponent,
     ProcessAddComponent,
     ConfirmDialogComponent,
+    SettingsComponent,
   ],
   imports: [
     BrowserModule,
