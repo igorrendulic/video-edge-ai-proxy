@@ -21,7 +21,7 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 - **Stream management** - deals with the complexities of stream management
 - **Video/Image Hub** - processing of images from multiple camera sources simulaneously
 - **Optimized** - optimized for processing multiple camera streams in parallel
-- **Selective Frames** - can read I-Frames (Keyframes) or Frames within any time interval (optimized stream decoding)
+- **Selective Frames** - can read I-Frames (Keyframes) or Frames within any time interval (skipping decoding of packets when possible)
 - **Selective Pass-Through** - selective streamin (start/stop) for preserving bandwidth
 - **Selective Pass-Through-Storage** - on and off switch for storing a portion of a stream forwarded to Chrysalis Cloud
 - **Machine Learning Annotation** - annotating live video streams

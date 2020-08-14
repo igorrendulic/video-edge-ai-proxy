@@ -23,7 +23,13 @@
                 <p>
                     <mat-form-field appearance="fill" fxFlex="100%">
                         <mat-label>Edge API Key</mat-label>
-                        <input matInput [type]="showEdgeKey ? 'text' : 'password'" formControlName="edge_key" value="{{settings.edge_key}}">
+                        <input matInput formControlName="edge_key" value="{{settings.edge_key}}">
+                    </mat-form-field>
+                </p>
+                <p>
+                    <mat-form-field appearance="fill" fxFlex="100%">
+                        <mat-label>Edge API Secret</mat-label>
+                        <input matInput [type]="showEdgeKey ? 'text' : 'password'" formControlName="edge_secret" value="{{settings.edge_secret}}">
                         <button mat-button matSuffix mat-icon-button (click)="showEdgeKey = !showEdgeKey">
                             <mat-icon>visibility</mat-icon>
                           </button>

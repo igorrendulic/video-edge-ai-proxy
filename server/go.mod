@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Ullaakut/nmap v2.0.0+incompatible // indirect
-	github.com/chryscloud/go-microkit-plugins v1.0.0
+	github.com/chryscloud/go-microkit-plugins v1.0.1
 	github.com/chryscloud/microkit-plugins v0.0.0-20200729005426-b9d22d75ad66
 	github.com/dgraph-io/badger v1.6.1 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.3

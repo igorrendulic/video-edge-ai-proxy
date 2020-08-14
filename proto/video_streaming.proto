@@ -35,14 +35,6 @@ message AnnotateRequest {
     string custom_meta_3 = 27;
     string custom_meta_4 = 28;
     string custom_meta_5 = 29;
-    int64 custom_meta_6 = 30; // e.g. persons age, height
-    int64 custom_meta_7 = 31; 
-    int64 custom_meta_8 = 32; 
-    int64 custom_meta_9 = 33; 
-    int64 custom_meta_10 = 34;
-    
-    // custom payload attached to the event
-    bytes custom_payload = 35; 
 }
 
 message AnnotateResponse {
@@ -55,8 +47,6 @@ message AnnotateResponse {
 message Location {
     double lat = 1; // latitude
     double lon = 2; // longitude
-    double alt = 3; // altitude
-    string description = 4; // location description
 }
 
 message Coordinate {

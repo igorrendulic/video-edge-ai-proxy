@@ -16,7 +16,7 @@
 import grpc
 import video_streaming_pb2_grpc, video_streaming_pb2
 import argparse
-
+import time
 
 def annotate(stub, device_name, event_type):
     """ Sending annotation to Chrysalis Cloud """
@@ -25,6 +25,8 @@ def annotate(stub, device_name, event_type):
     annotation_request = video_streaming_pb2.AnnotateRequest()
     annotation_request.device_name = device_name
     annotation_request.type = event_type
+    annotation_request.start_timestamp = int(round(time.time() * 1000))
+    annotation_request.end_timestamp = int(round(time.time() * 1000))
     try:
         resp = stub.Annotate(annotation_request)
         print(resp)

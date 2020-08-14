@@ -20,8 +20,10 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/chryscloud/go-microkit-plugins/config"
+	"github.com/chryscloud/go-microkit-plugins/backpressure"
+	cfg "github.com/chryscloud/go-microkit-plugins/config"
 	msrv "github.com/chryscloud/go-microkit-plugins/server"
+	"github.com/chryscloud/video-edge-ai-proxy/batch"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/grpcapi"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
@@ -61,12 +63,24 @@ func main() {
 	done := make(chan bool, 1)
 	quit := make(chan os.Signal, 1)
 
-	// TODO: create conf.yaml file
-	conf := g.Config{
-		YamlConfig: config.YamlConfig{
-			Port: 8080,
-			Mode: gin.ReleaseMode,
-		},
+	// check if configuration file exists
+	var conf g.Config
+	if _, err := os.Stat(defaultDBPath + "/conf.yaml"); os.IsNotExist(err) {
+		// config file does not exist
+		conf = g.Config{
+			YamlConfig: cfg.YamlConfig{
+				Port: 8080,
+				Mode: gin.ReleaseMode,
+			},
+		}
+	} else {
+		// custom config file exists
+		err := cfg.NewYamlConfig(defaultDBPath+"/conf.yaml", &conf)
+		conf.Port = 8080 // override port, if changed in config
+		if err != nil {
+			g.Log.Error(err, "conf.yaml failed to load")
+			panic("Failed to load conf.yaml")
+		}
 	}
 	g.Conf = conf
 
@@ -85,6 +99,8 @@ func main() {
 	// Services
 	processService := services.NewProcessManager(storage)
 	settingsService := services.NewSettingsManager(storage)
+	annotationBatchService := batch.NewChrysBatchWorker(settingsService)
+	defer annotationBatchService.Close()
 
 	gin.SetMode(conf.Mode)
 
@@ -96,12 +112,12 @@ func main() {
 	// wait for server shutdown
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
-	go startGrpcServer(processService, settingsService)
+	go startGrpcServer(processService, settingsService, annotationBatchService)
 	go shutdownGrpc(quit, done)
 
-	g.Log.Info("Server is ready to handle requests at", g.Conf.Port)
+	g.Log.Info("Server is ready to handle requests at", conf.Port)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		g.Log.Error("Could not listen on %s: %v\n", g.Conf.Port, err)
+		g.Log.Error("Could not listen on %s: %v\n", conf.Port, err)
 	}
 
 	<-done
@@ -110,7 +126,7 @@ func main() {
 	g.Log.Info("exit")
 }
 
-func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager) error {
+func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager, batchContext *backpressure.PressureContext) error {
 	conn, err := net.Listen("tcp", "0.0.0.0:50001") // TODO: take from conf.yaml file
 	if err != nil {
 		g.Log.Error("Failed to open grpc connection", err)
@@ -119,7 +135,7 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	grpcConn = conn
 	grpcServer = grpc.NewServer()
 
-	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService))
+	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, batchContext))
 	g.Log.Info("Grpc Servier is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }

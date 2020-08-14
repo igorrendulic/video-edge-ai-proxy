@@ -16,6 +16,7 @@ package services
 
 import (
 	"encoding/json"
+	"sync"
 	"time"
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
@@ -25,13 +26,34 @@ import (
 
 // SettingsManager - various settings for the edge
 type SettingsManager struct {
-	storage *Storage
+	storage             *Storage
+	current_edge_key    string
+	current_edge_secret string
+	mux                 *sync.RWMutex
 }
 
 func NewSettingsManager(storage *Storage) *SettingsManager {
 	return &SettingsManager{
 		storage: storage,
+		mux:     &sync.RWMutex{},
 	}
+}
+
+func (sm *SettingsManager) GetCurrentEdgeKeyAndSecret() (string, string, error) {
+	if sm.current_edge_key == "" || sm.current_edge_secret == "" {
+		settings, err := sm.getDefault()
+		if err != nil {
+			if err != badger.ErrKeyNotFound {
+				g.Log.Error("failed to query for current edge api key and secret", err)
+			}
+			return "", "", err
+		}
+		sm.mux.Lock()
+		defer sm.mux.Unlock()
+		sm.current_edge_key = settings.EdgeKey
+		sm.current_edge_secret = settings.EdgeSecret
+	}
+	return sm.current_edge_key, sm.current_edge_secret, nil
 }
 
 // getDefault - retrieves settings if exist, otherwise creates new empty settings
@@ -57,6 +79,14 @@ func (sm *SettingsManager) getDefault() (*models.Settings, error) {
 			return nil, unmErr
 		}
 	}
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+	if settings.EdgeKey != "" {
+		sm.current_edge_key = settings.EdgeKey
+	}
+	if settings.EdgeSecret != "" {
+		sm.current_edge_secret = settings.EdgeSecret
+	}
 	return &settings, nil
 }
 
@@ -69,6 +99,7 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 	}
 	// curently only edgekey setting
 	settings.EdgeKey = new.EdgeKey
+	settings.EdgeSecret = new.EdgeSecret
 	if settings.Created < 0 {
 		settings.Created = time.Now().Unix() * 1000
 	}
@@ -79,6 +110,10 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 		g.Log.Error("failed to marshal settings", err)
 		return err
 	}
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+	sm.current_edge_key = settings.EdgeKey
+	sm.current_edge_secret = settings.EdgeSecret
 	return sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
 }
 

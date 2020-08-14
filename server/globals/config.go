@@ -27,6 +27,13 @@ var Log mclog.Logger
 
 type Config struct {
 	cfg.YamlConfig `yaml:",inline"`
+	GrpcPort       string                   `yaml:"grpc_port"`
+	Endpoints      *RemoteEndpointSubconfig `yaml:"endpoints"`
+}
+
+// RemoteEndpointSubconfig configuring remote endpoints
+type RemoteEndpointSubconfig struct {
+	AnnotationEndpoint string `yaml:"annotation_endpoint"`
 }
 
 func init() {
