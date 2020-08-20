@@ -19,12 +19,12 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 - **RTSP camera hub** - User interface and RESTful API for setting up multiple RTSP cameras
 - **Connection management** - handles cases of internet outages or camera streaming problems
 - **Stream management** - deals with the complexities of stream management
-- **Video/Image Hub** - processing of images from multiple camera sources simulaneously
+- **Video/Image Hub** - processing of images from multiple camera sources simultaneously
 - **Optimized** - optimized for processing multiple camera streams in parallel
 - **Selective Frames** - can read I-Frames (Keyframes) or Frames within any time interval (skipping decoding of packets when possible)
 - **Selective Pass-Through** - selective streamin (start/stop) for preserving bandwidth
 - **Selective Pass-Through-Storage** - on and off switch for storing a portion of a stream forwarded to Chrysalis Cloud
-- **Machine Learning Annotation** - annotating live video streams
+- **Machine Learning Annotation** - asynchronous annotations for live video streams
 
 ## Contents
 
@@ -37,7 +37,11 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
   * [Example Prerequisites](#example-prerequisites)
   * [Running basic_usage.py](#running-basic_usage.py)
   * [Running opencv_display.py](#running-opencv_display.py)
+  * [Running annotation.py](#running-annotation_display.py)
 * [Build](#build)
+* [Custom configuration](#custom-configuration)
+  * [Custom Redis Configuration](#custom-redis-configuration)
+  * [Custom Chrysalis Configuration](#custom-chrysalis-configuration)
 
 ## Prerequisites
 
@@ -206,6 +210,15 @@ python opencv_display.py --device test --keyframe
 ```
 
 
+### Running `annotation.py`
+
+Asynchronous annotation from the edge.
+
+```
+python annotation.py --device test --type thisistest
+```
+
+
 ## Build
 
 Building from source code:
@@ -214,20 +227,65 @@ Building from source code:
 docker-compose build
 ```
 
+# Custom configuration
+
+## Custom redis configuration
+
+Default configuration is in the root folder of this project: `./redis.conf`
+
+1. Update default `redis.conf` in the root directory of this project
+2. Uncomment volumes section in redis config
+```yaml   
+    # volumes:
+    #   - /data/chrysalis/redis:/var/lib/redis
+    #   - $PWD/redis.conf:/usr/local/etc/redis/redis.conf
+```
+
+## Custom Chrysalis configuration
+
+Create `conf.yaml` file in `/data/chrysalis` folder. The configuration file is automatically picked up if it exists otherwise system fallbacks to it's default configuration.
+
+```yaml
+version: 0.0.2-alpha
+title: Chrysalis Video Edge Proxy
+description: Chrysalis Video Edge Proxy Service for Computer Vision
+mode: release # "debug": or "release"
+
+redis:
+  connection: "redis:6379"
+  database: 0
+  password: ""
+
+annotation:
+  endpoint: "https://event.chryscloud.com/api/v1/annotate"
+  unacked_limit: 1000
+  poll_duration_ms: 300
+  max_batch_size: 299
+```
+
+- `mode: release`: disables debug mode for http server (default: release)
+- `redis -> connection`: redis host with port (default: "redis:6379")
+- `redis -> database` : 0 - 15. 0 is redis default database. (default: 0)
+- `redis -> password`: optional redis password (default: "")
+- `annotation -> endpoint`: Crysalis Cloud annotation endpoint (default: https://event.chryscloud.com/api/v1/annotate)
+- `annotation -> unacked limit`: maximum number of unacknowledged annotatoons (default: 299)
+- `annotation -> poll_duration_ms`: poll every x miliseconds for batching purposes (default: 300ms)
+- `annotation -> max_match_size`: maximum number of annotation per batch size (default: 299)
+
 
 # RoadMap
 
 - [X] Finish documentation
+- [X] Configuration (custom configuration)
 - [ ] Set enable/disabled flag for storage
 - [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only if high FPS on display)
 - [ ] Add API key to Chrysalis Cloud for enable/disable storage
-- [ ] Security (grpc TLS Client Authentication)
-- [ ] Security (TLS Client Authentication for web interface)
-- [ ] Security (auto generate redis password)
-- [ ] Configuration (extract configuration for custom port assingnment)
+- [ ] Remote access Security (grpc TLS Client Authentication)
+- [ ] Remote access Security (TLS Client Authentication for web interface)
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)
 - [ ] add v4l2 container support (e.g. Jetson Nano, Raspberry Pi?)
 - [ ] Initial web screen to pull images (RTSP, RTMP, V4l2)
+- [ ] Benchmark NVDEC,NVENC, VAAPI hardware decoders
 
 # Contributing
 

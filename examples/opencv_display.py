@@ -18,6 +18,7 @@ import video_streaming_pb2_grpc, video_streaming_pb2
 import argparse
 import cv2
 import numpy as np
+import time
 
 def gen_image_request(device_name, keyframe_only):
     """ Create an object to request a video frame """
@@ -40,6 +41,7 @@ if __name__ == "__main__":
     stub = video_streaming_pb2_grpc.ImageStub(channel)
     
     while True:
+        prev = int(time.time() * 1000)
         for frame in stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=args.keyframe)):
             # read raw frame data and convert to numpy array
             img_bytes = frame.data 
@@ -51,9 +53,12 @@ if __name__ == "__main__":
                 re_img = np.reshape(re_img, reshape)
 
                 # add camera name
-                cv2.putText(re_img, args.device, (20,20), cv2.FONT_HERSHEY_COMPLEX_SMALL, fontScale=1, color=(0, 0, 0), thickness=1)
-                # display with opencv imshow
-                cv2.imshow("RTSP Live View", re_img)
+                cv2.namedWindow('box', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('box', 640,480)
+                cv2.setWindowTitle('box', args.device) 
+                cv2.imshow('box', re_img)
                 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+
+    cv2.destroyWindow('box')

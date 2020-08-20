@@ -21,12 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chryscloud/go-microkit-plugins/backpressure"
+	"github.com/adjust/rmq/v2"
+	"github.com/chryscloud/video-edge-ai-proxy/batch"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
 	"github.com/chryscloud/video-edge-ai-proxy/services"
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,22 +39,44 @@ type grpcImageHandler struct {
 	processManager  *services.ProcessManager
 	settingsManager *services.SettingsManager
 	edgeKey         *string
-	batching        *backpressure.PressureContext
+	msgQueue        rmq.Queue
 }
 
 // NewGrpcImageHandler returns main GRPC API handler
-func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager, batchContext *backpressure.PressureContext) *grpcImageHandler {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: "", // TODO: set redis password and use it here
-		DB:       0,  // use default DB
-	})
+func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager) *grpcImageHandler {
+
+	var rdb *redis.Client
+	for i := 0; i < 3; i++ {
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     g.Conf.Redis.Connection,
+			Password: g.Conf.Redis.Password,
+			DB:       g.Conf.Redis.Database,
+		})
+
+		status := rdb.Ping()
+		g.Log.Info("redis status: ", status)
+		if status.Err() != nil {
+			g.Log.Warn("waiting for redis to boot up", status.Err().Error)
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		break
+	}
+
+	conn := rmq.OpenConnectionWithRedisClient("annotationService", rdb)
+	msgQueue := conn.OpenQueue("annotationqueue")
+
+	// add batch listener (consumer) for annotatons
+	annotationConsumer := batch.NewAnnotationConsumer(0, settingsManager, msgQueue)
+	msgQueue.StartConsuming(g.Conf.Annotation.UnackedLimit, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond)
+	msgQueue.AddBatchConsumerWithTimeout("annotationqueue", g.Conf.Annotation.MaxBatchSize, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond, annotationConsumer)
+
 	return &grpcImageHandler{
 		redisConn:       rdb,
 		deviceMap:       sync.Map{},
 		processManager:  processManager,
 		settingsManager: settingsManager,
-		batching:        batchContext,
+		msgQueue:        msgQueue,
 	}
 }
 
@@ -92,7 +115,7 @@ func (gih *grpcImageHandler) StartProxy(ctx context.Context, req *pb.StartProxyR
 	valMap[models.RedisProxyRTMPKey] = true
 	valMap[models.RedisProxyStoreKey] = req.StoreVideo
 
-	rErr := gih.redisConn.HSet(ctx, models.RedisLastAccessPrefix+deviceID, valMap).Err()
+	rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+deviceID, valMap).Err()
 	if rErr != nil {
 		g.Log.Error("failed to store startproxy value map to redis", rErr)
 		return nil, status.Errorf(codes.Internal, err.Error())
@@ -138,7 +161,7 @@ func (gih *grpcImageHandler) StopProxy(ctx context.Context, req *pb.StopProxyReq
 	valMap[models.RedisProxyRTMPKey] = false
 	valMap[models.RedisProxyStoreKey] = false
 
-	rErr := gih.redisConn.HSet(ctx, models.RedisLastAccessPrefix+deviceID, valMap).Err()
+	rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+deviceID, valMap).Err()
 	if rErr != nil {
 		g.Log.Error("failed to update on stopProxy redis", deviceID, rErr)
 		return nil, status.Errorf(codes.Internal, err.Error())
@@ -215,14 +238,11 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-		defer cancel()
-
 		streamName := request.DeviceId
 		isKeyFrameOnly := request.KeyFrameOnly
 
 		decodeOnlyKeyFramesKey := models.RedisIsKeyFrameOnlyPrefix + streamName
-		err = gih.redisConn.Set(ctx, decodeOnlyKeyFramesKey, strconv.FormatBool(isKeyFrameOnly), 0).Err()
+		err = gih.redisConn.Set(decodeOnlyKeyFramesKey, strconv.FormatBool(isKeyFrameOnly), 0).Err()
 		if err != nil {
 			g.Log.Error("failed to set if is keyframe only", streamName, err)
 		}
@@ -233,7 +253,7 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 		valMap := make(map[string]interface{}, 0)
 		valMap[models.RedisLastAccessQueryTimeKey] = val
 
-		rErr := gih.redisConn.HSet(ctx, models.RedisLastAccessPrefix+streamName, valMap).Err()
+		rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+streamName, valMap).Err()
 		if rErr != nil {
 			g.Log.Error("failed to update on stopProxy redis", streamName, rErr)
 			continue
@@ -248,8 +268,8 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 			lastTs = last_ts.(string)
 		}
 
-		// waiting up to 20 x 40ms = 800ms seconds max to get an image from redis, otherwise considered there is none
-		for i := 0; i < 10; i++ {
+		// waiting up to 3 x 16ms = max to get an image from redis, otherwise considered that there is no image
+		for i := 0; i < 3; i++ {
 
 			imgFound := false
 
@@ -259,7 +279,7 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 				Count:   60,
 			}
 
-			vals, err := gih.redisConn.XRead(ctx, args).Result()
+			vals, err := gih.redisConn.XRead(args).Result()
 			if err != nil {
 				g.Log.Info("waiting for an image, retry #", i, err.Error())
 				continue
@@ -289,8 +309,8 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 			if imgFound {
 				break
 			}
-			// delay or 40 ms before new attempty
-			time.Sleep(time.Millisecond * 40)
+			// delay or 16 ms before new attempty
+			time.Sleep(time.Millisecond * 16)
 		}
 
 		if errStr := stream.Send(vf); errStr != nil {

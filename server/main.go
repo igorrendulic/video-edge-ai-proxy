@@ -20,10 +20,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/chryscloud/go-microkit-plugins/backpressure"
 	cfg "github.com/chryscloud/go-microkit-plugins/config"
 	msrv "github.com/chryscloud/go-microkit-plugins/server"
-	"github.com/chryscloud/video-edge-ai-proxy/batch"
+	"github.com/chryscloud/video-edge-ai-proxy/globals"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/grpcapi"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
@@ -73,6 +72,17 @@ func main() {
 				Mode: gin.ReleaseMode,
 			},
 		}
+		conf.Annotation = &globals.AnnotationSubconfig{
+			Endpoint:       "https://event.chryscloud.com/api/v1/annotate",
+			MaxBatchSize:   299,
+			PollDurationMs: 300,
+			UnackedLimit:   1000,
+		}
+		conf.Redis = &globals.RedisSubconfig{
+			Connection: "redis:6379",
+			Database:   0,
+			Password:   "",
+		}
 	} else {
 		// custom config file exists
 		err := cfg.NewYamlConfig(defaultDBPath+"/conf.yaml", &conf)
@@ -99,8 +109,8 @@ func main() {
 	// Services
 	processService := services.NewProcessManager(storage)
 	settingsService := services.NewSettingsManager(storage)
-	annotationBatchService := batch.NewChrysBatchWorker(settingsService)
-	defer annotationBatchService.Close()
+	// annotationBatchService := batch.NewChrysBatchWorker(settingsService)
+	// defer annotationBatchService.Close()
 
 	gin.SetMode(conf.Mode)
 
@@ -112,7 +122,7 @@ func main() {
 	// wait for server shutdown
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
-	go startGrpcServer(processService, settingsService, annotationBatchService)
+	go startGrpcServer(processService, settingsService)
 	go shutdownGrpc(quit, done)
 
 	g.Log.Info("Server is ready to handle requests at", conf.Port)
@@ -126,7 +136,7 @@ func main() {
 	g.Log.Info("exit")
 }
 
-func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager, batchContext *backpressure.PressureContext) error {
+func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager) error {
 	conn, err := net.Listen("tcp", "0.0.0.0:50001") // TODO: take from conf.yaml file
 	if err != nil {
 		g.Log.Error("Failed to open grpc connection", err)
@@ -135,7 +145,7 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	grpcConn = conn
 	grpcServer = grpc.NewServer()
 
-	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, batchContext))
+	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService))
 	g.Log.Info("Grpc Servier is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }

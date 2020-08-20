@@ -27,13 +27,24 @@ var Log mclog.Logger
 
 type Config struct {
 	cfg.YamlConfig `yaml:",inline"`
-	GrpcPort       string                   `yaml:"grpc_port"`
-	Endpoints      *RemoteEndpointSubconfig `yaml:"endpoints"`
+	GrpcPort       string               `yaml:"grpc_port"`
+	Redis          *RedisSubconfig      `yaml:"redis"`
+	Annotation     *AnnotationSubconfig `yaml:"annotation"`
 }
 
-// RemoteEndpointSubconfig configuring remote endpoints
-type RemoteEndpointSubconfig struct {
-	AnnotationEndpoint string `yaml:"annotation_endpoint"`
+// RedisSubconfig connnection settings
+type RedisSubconfig struct {
+	Connection string `yaml:"connection"`
+	Database   int    `yaml:"database"`
+	Password   string `yaml:"password"`
+}
+
+// AnnotationSubconfig - annotation consumer rates
+type AnnotationSubconfig struct {
+	Endpoint       string `yaml:"endpoint"`         // chryscloud annotation endpoint
+	UnackedLimit   int    `yaml:"unacked_limit"`    // maximum number of unacknowledged annotations
+	PollDurationMs int    `yaml:"poll_duration_ms"` // time to wait until new poll of annotations (miliseconds)
+	MaxBatchSize   int    `yaml:"max_batch_size"`   // maximum number of events processed in one batch
 }
 
 func init() {
