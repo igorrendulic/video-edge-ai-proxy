@@ -20,4 +20,5 @@ import "errors"
 var (
 	ErrProcessNotFound          = errors.New("process not found")
 	ErrProcessNotFoundDatastore = errors.New("process not found in datastore")
+	ErrForbidden                = errors.New("operation not allowed")
 )

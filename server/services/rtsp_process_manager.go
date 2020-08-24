@@ -27,16 +27,19 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	dockerErrors "github.com/docker/docker/client"
+	"github.com/go-redis/redis/v7"
 )
 
 // ProcessManager - start, stop of docker containers
 type ProcessManager struct {
 	storage *Storage
+	rdb     *redis.Client
 }
 
-func NewProcessManager(storage *Storage) *ProcessManager {
+func NewProcessManager(storage *Storage, rdb *redis.Client) *ProcessManager {
 	return &ProcessManager{
 		storage: storage,
+		rdb:     rdb,
 	}
 }
 
@@ -94,6 +97,24 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 
 	process.Status = "running"
 	process.Created = time.Now().Unix() * 1000
+
+	// set default value in redis if RTMP streaming enabled
+	if process.RTMPEndpoint != "" {
+		valMap := make(map[string]interface{}, 0)
+		valMap[models.RedisLastAccessQueryTimeKey] = time.Now().Unix() * 1000
+		valMap[models.RedisProxyRTMPKey] = true
+
+		rErr := pm.rdb.HSet(models.RedisLastAccessPrefix+process.Name, valMap).Err()
+		if rErr != nil {
+			g.Log.Error("failed to store startproxy value map to redis", rErr)
+			return rErr
+		}
+		if process.RTMPStreamStatus == nil {
+			process.RTMPStreamStatus = &models.RTMPStreamStatus{}
+		}
+		process.RTMPStreamStatus.Streaming = true
+	}
+
 	obj, err := json.Marshal(process)
 	if err != nil {
 		g.Log.Error("failed to marshal process json", err)

@@ -22,9 +22,9 @@ fi
 echo "Started python rtsp process..."
 source activate chrysedgeai
 if [ -z "$rtmp_endpoint" ]; then 
-    python rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id"    
+    python -u rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id"    
 else
-    python rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id" --rtmp "$rtmp_endpoint"
+    python -u rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id" --rtmp "$rtmp_endpoint"
 fi
 
 echo $?

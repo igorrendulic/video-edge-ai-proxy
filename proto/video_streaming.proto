@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package chrys.cloud.videostreaming.v1beta1;
 
+// Annotation messages
 message AnnotateRequest {
 
     string device_name = 1; // required: device name (required) identity of device
@@ -62,6 +63,7 @@ message BoudingBox {
     int32 height = 4;
 }
 
+// Video Streaming messages
 message ShapeProto {
     message Dim {
         // Size of image in that dimension (-1 means unknown dimension)
@@ -95,6 +97,7 @@ message VideoFrameRequest {
     string device_id = 2;
 }
 
+// ListStream messages
 message ListStream {
     string name = 1;
     string status = 2;
@@ -112,25 +115,32 @@ message ListStream {
 message ListStreamRequest {
 }
 
-message StartProxyRequest {
+// Proxy messages
+message ProxyRequest {
     string device_id = 1;
-    bool store_video = 2;
-}
-
-message StopProxyRequest {
-    string device_id = 1;
+    bool passthrough = 2; // true = passthrough streaming, false = stop passthrough streaming
 }
 
 message ProxyResponse {
     string device_id = 1;
-    bool proxy_stream = 2;
-    bool store_video = 3;
+    bool passthrough = 2;
 }
+
+// Storage messages
+message StorageRequest {
+    string device_id = 1;
+    bool start = 2;
+}
+message StorageResponse {
+    string device_id = 1;
+    bool start = 2;
+}
+
 
 service Image {
     rpc VideoLatestImage(stream VideoFrameRequest) returns (stream VideoFrame) {}
     rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}
-    rpc StartProxy(StartProxyRequest) returns (ProxyResponse) {}
-    rpc StopProxy(StopProxyRequest) returns (ProxyResponse) {}
     rpc Annotate(AnnotateRequest) returns (AnnotateResponse) {}
+    rpc Proxy(ProxyRequest) returns (ProxyResponse) {} // start stop rtmp passthrough
+    rpc Storage(StorageRequest) returns (StorageResponse) {} // start stop storage request on the Chrysalis servers
 }

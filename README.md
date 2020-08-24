@@ -256,6 +256,9 @@ redis:
   database: 0
   password: ""
 
+api:
+  endpoint: https://api.chryscloud.com
+
 annotation:
   endpoint: "https://event.chryscloud.com/api/v1/annotate"
   unacked_limit: 1000
@@ -267,6 +270,7 @@ annotation:
 - `redis -> connection`: redis host with port (default: "redis:6379")
 - `redis -> database` : 0 - 15. 0 is redis default database. (default: 0)
 - `redis -> password`: optional redis password (default: "")
+- `api -> endpoint`: chrysalis API location for remote signaling such as enable/disable storage (default: https://api.chryscloud.com)
 - `annotation -> endpoint`: Crysalis Cloud annotation endpoint (default: https://event.chryscloud.com/api/v1/annotate)
 - `annotation -> unacked limit`: maximum number of unacknowledged annotatoons (default: 299)
 - `annotation -> poll_duration_ms`: poll every x miliseconds for batching purposes (default: 300ms)
@@ -277,9 +281,9 @@ annotation:
 
 - [X] Finish documentation
 - [X] Configuration (custom configuration)
-- [ ] Set enable/disabled flag for storage
+- [X] Set enable/disabled flag for storage
 - [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only if high FPS on display)
-- [ ] Add API key to Chrysalis Cloud for enable/disable storage
+- [X] Add API key to Chrysalis Cloud for enable/disable storage
 - [ ] Remote access Security (grpc TLS Client Authentication)
 - [ ] Remote access Security (TLS Client Authentication for web interface)
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)

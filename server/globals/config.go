@@ -30,6 +30,7 @@ type Config struct {
 	GrpcPort       string               `yaml:"grpc_port"`
 	Redis          *RedisSubconfig      `yaml:"redis"`
 	Annotation     *AnnotationSubconfig `yaml:"annotation"`
+	API            *ApiSubconfig        `yaml:"api"`
 }
 
 // RedisSubconfig connnection settings
@@ -45,6 +46,11 @@ type AnnotationSubconfig struct {
 	UnackedLimit   int    `yaml:"unacked_limit"`    // maximum number of unacknowledged annotations
 	PollDurationMs int    `yaml:"poll_duration_ms"` // time to wait until new poll of annotations (miliseconds)
 	MaxBatchSize   int    `yaml:"max_batch_size"`   // maximum number of events processed in one batch
+}
+
+// VideoApiSubconfig - video api specifics
+type ApiSubconfig struct {
+	Endpoint string `yaml:"endpoint"` // video storage on/off endpoint
 }
 
 func init() {

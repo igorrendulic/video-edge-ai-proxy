@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Annotate queues a new annotation event to be sent to Chrysalis event servers
 func (gih *grpcImageHandler) Annotate(ctx context.Context, req *pb.AnnotateRequest) (*pb.AnnotateResponse, error) {
 	if gih.edgeKey == nil {
 		settings, err := gih.settingsManager.Get()

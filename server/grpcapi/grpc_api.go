@@ -29,45 +29,48 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
+
+type StorageInput struct {
+	Enable bool `json:"enable"`
+}
 
 type grpcImageHandler struct {
 	redisConn       *redis.Client
 	deviceMap       sync.Map
 	processManager  *services.ProcessManager
 	settingsManager *services.SettingsManager
+	edgeService     *services.EdgeService
 	edgeKey         *string
 	msgQueue        rmq.Queue
 }
 
 // NewGrpcImageHandler returns main GRPC API handler
-func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager) *grpcImageHandler {
+func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager, edgeService *services.EdgeService, rdb *redis.Client) *grpcImageHandler {
 
-	var rdb *redis.Client
-	for i := 0; i < 3; i++ {
-		rdb = redis.NewClient(&redis.Options{
-			Addr:     g.Conf.Redis.Connection,
-			Password: g.Conf.Redis.Password,
-			DB:       g.Conf.Redis.Database,
-		})
+	// var rdb *redis.Client
+	// for i := 0; i < 3; i++ {
+	// 	rdb = redis.NewClient(&redis.Options{
+	// 		Addr:     g.Conf.Redis.Connection,
+	// 		Password: g.Conf.Redis.Password,
+	// 		DB:       g.Conf.Redis.Database,
+	// 	})
 
-		status := rdb.Ping()
-		g.Log.Info("redis status: ", status)
-		if status.Err() != nil {
-			g.Log.Warn("waiting for redis to boot up", status.Err().Error)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		break
-	}
+	// 	status := rdb.Ping()
+	// 	g.Log.Info("redis status: ", status)
+	// 	if status.Err() != nil {
+	// 		g.Log.Warn("waiting for redis to boot up", status.Err().Error)
+	// 		time.Sleep(3 * time.Second)
+	// 		continue
+	// 	}
+	// 	break
+	// }
 
 	conn := rmq.OpenConnectionWithRedisClient("annotationService", rdb)
 	msgQueue := conn.OpenQueue("annotationqueue")
 
 	// add batch listener (consumer) for annotatons
-	annotationConsumer := batch.NewAnnotationConsumer(0, settingsManager, msgQueue)
+	annotationConsumer := batch.NewAnnotationConsumer(0, settingsManager, edgeService, msgQueue)
 	msgQueue.StartConsuming(g.Conf.Annotation.UnackedLimit, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond)
 	msgQueue.AddBatchConsumerWithTimeout("annotationqueue", g.Conf.Annotation.MaxBatchSize, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond, annotationConsumer)
 
@@ -76,6 +79,7 @@ func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManage
 		deviceMap:       sync.Map{},
 		processManager:  processManager,
 		settingsManager: settingsManager,
+		edgeService:     edgeService,
 		msgQueue:        msgQueue,
 	}
 }
@@ -90,95 +94,6 @@ func (gih *grpcImageHandler) toUint64(object map[string]interface{}, field strin
 		return w
 	}
 	return 0
-}
-
-// StartProxy - starts proxying the process stream video/audio to destination RTMP on Chrysalis cloud
-func (gih *grpcImageHandler) StartProxy(ctx context.Context, req *pb.StartProxyRequest) (*pb.ProxyResponse, error) {
-	deviceID := req.DeviceId
-	storeVideo := req.StoreVideo
-
-	if deviceID == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "device id required")
-	}
-
-	info, err := gih.processManager.Info(deviceID)
-	if err != nil {
-		g.Log.Error("failed to get deviceID info", err)
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
-	}
-	if info.RTMPEndpoint == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "device "+deviceID+" doesn't have an associated RTMP stream")
-	}
-
-	valMap := make(map[string]interface{}, 0)
-	valMap[models.RedisLastAccessQueryTimeKey] = time.Now().Unix() * 1000
-	valMap[models.RedisProxyRTMPKey] = true
-	valMap[models.RedisProxyStoreKey] = req.StoreVideo
-
-	rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+deviceID, valMap).Err()
-	if rErr != nil {
-		g.Log.Error("failed to store startproxy value map to redis", rErr)
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-	if info.RTMPStreamStatus == nil {
-		info.RTMPStreamStatus = &models.RTMPStreamStatus{}
-	}
-	info.RTMPStreamStatus.Storing = storeVideo
-	info.RTMPStreamStatus.Streaming = true
-
-	_, sErr := gih.processManager.UpdateProcessInfo(info)
-	if sErr != nil {
-		g.Log.Error("failed to update stream info", deviceID, sErr)
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-	resp := &pb.ProxyResponse{
-		DeviceId:    deviceID,
-		ProxyStream: info.RTMPStreamStatus.Streaming,
-		StoreVideo:  info.RTMPStreamStatus.Storing,
-	}
-
-	return resp, nil
-}
-
-// StopProxy stops the RTMP streaming to the Chrysalis cloud and by default sets storage to false
-func (gih *grpcImageHandler) StopProxy(ctx context.Context, req *pb.StopProxyRequest) (*pb.ProxyResponse, error) {
-	deviceID := req.DeviceId
-
-	info, err := gih.processManager.Info(deviceID)
-	if err != nil {
-		g.Log.Error("failed to get deviceID info", err)
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
-	}
-
-	if info.RTMPStreamStatus == nil { // shoulnd't happen, but just in case
-		info.RTMPStreamStatus = &models.RTMPStreamStatus{}
-	}
-	info.RTMPStreamStatus.Storing = false
-	info.RTMPStreamStatus.Streaming = false
-
-	valMap := make(map[string]interface{}, 0)
-	valMap[models.RedisLastAccessQueryTimeKey] = time.Now().Unix() * 1000
-	valMap[models.RedisProxyRTMPKey] = false
-	valMap[models.RedisProxyStoreKey] = false
-
-	rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+deviceID, valMap).Err()
-	if rErr != nil {
-		g.Log.Error("failed to update on stopProxy redis", deviceID, rErr)
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
-	_, uerr := gih.processManager.UpdateProcessInfo(info)
-	if uerr != nil {
-		g.Log.Error("failed to update process info", uerr)
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
-	resp := &pb.ProxyResponse{
-		DeviceId:    deviceID,
-		ProxyStream: info.RTMPStreamStatus.Streaming,
-		StoreVideo:  info.RTMPStreamStatus.Storing,
-	}
-	return resp, nil
 }
 
 // ListStreams returns the list of all streams regardless of their status

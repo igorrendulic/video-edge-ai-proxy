@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	cfg "github.com/chryscloud/go-microkit-plugins/config"
 	msrv "github.com/chryscloud/go-microkit-plugins/server"
@@ -30,6 +31,7 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v7"
 	"google.golang.org/grpc"
 )
 
@@ -38,24 +40,6 @@ var (
 	grpcConn      net.Listener
 	defaultDBPath = "/data/chrysalis"
 )
-
-// setup local badge datastore
-func setupDB() (*badger.DB, error) {
-	if _, err := os.Stat(defaultDBPath); os.IsNotExist(err) {
-		// path/to/whatever does not exist
-		errDir := os.MkdirAll(defaultDBPath, os.ModePerm) //rw permission for the current user
-		if errDir != nil {
-			g.Log.Error("failed to create directiory for DB", defaultDBPath, errDir)
-			return nil, errDir
-		}
-	}
-	db, err := badger.Open(badger.DefaultOptions(defaultDBPath))
-	if err != nil {
-		g.Log.Error("faile to open database", err)
-		return nil, err
-	}
-	return db, nil
-}
 
 func main() {
 	// server wait to shutdown monitoring channels
@@ -77,6 +61,9 @@ func main() {
 			MaxBatchSize:   299,
 			PollDurationMs: 300,
 			UnackedLimit:   1000,
+		}
+		conf.API = &globals.ApiSubconfig{
+			Endpoint: "https://api.chryscloud.com",
 		}
 		conf.Redis = &globals.RedisSubconfig{
 			Connection: "redis:6379",
@@ -103,14 +90,21 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	rdb, rdbErr := setupRedis()
+	if rdbErr != nil {
+		g.Log.Error("Failed to init redis", rdbErr)
+		os.Exit(1)
+	}
+	defer rdb.Close()
+
 	// Storage
 	storage := services.NewStorage(db)
 
 	// Services
-	processService := services.NewProcessManager(storage)
+	processService := services.NewProcessManager(storage, rdb)
 	settingsService := services.NewSettingsManager(storage)
-	// annotationBatchService := batch.NewChrysBatchWorker(settingsService)
-	// defer annotationBatchService.Close()
+	edgeService := services.NewEdgeService()
 
 	gin.SetMode(conf.Mode)
 
@@ -122,7 +116,7 @@ func main() {
 	// wait for server shutdown
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
-	go startGrpcServer(processService, settingsService)
+	go startGrpcServer(processService, settingsService, edgeService, rdb)
 	go shutdownGrpc(quit, done)
 
 	g.Log.Info("Server is ready to handle requests at", conf.Port)
@@ -136,7 +130,7 @@ func main() {
 	g.Log.Info("exit")
 }
 
-func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager) error {
+func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager, edgeService *services.EdgeService, rdb *redis.Client) error {
 	conn, err := net.Listen("tcp", "0.0.0.0:50001") // TODO: take from conf.yaml file
 	if err != nil {
 		g.Log.Error("Failed to open grpc connection", err)
@@ -145,7 +139,7 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	grpcConn = conn
 	grpcServer = grpc.NewServer()
 
-	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService))
+	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, edgeService, rdb))
 	g.Log.Info("Grpc Servier is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }
@@ -158,4 +152,47 @@ func shutdownGrpc(quit <-chan os.Signal, done chan<- bool) {
 	}
 	close(done)
 	g.Log.Info("stopping grpc server...")
+}
+
+// setup local badge datastore
+func setupDB() (*badger.DB, error) {
+	if _, err := os.Stat(defaultDBPath); os.IsNotExist(err) {
+		// path/to/whatever does not exist
+		errDir := os.MkdirAll(defaultDBPath, os.ModePerm) //rw permission for the current user
+		if errDir != nil {
+			g.Log.Error("failed to create directiory for DB", defaultDBPath, errDir)
+			return nil, errDir
+		}
+	}
+	db, err := badger.Open(badger.DefaultOptions(defaultDBPath))
+	if err != nil {
+		g.Log.Error("faile to open database", err)
+		return nil, err
+	}
+	return db, nil
+}
+
+// setup redis datastore
+func setupRedis() (*redis.Client, error) {
+	var rdb *redis.Client
+	for i := 0; i < 3; i++ {
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     g.Conf.Redis.Connection,
+			Password: g.Conf.Redis.Password,
+			DB:       g.Conf.Redis.Database,
+		})
+
+		status := rdb.Ping()
+		g.Log.Info("redis status: ", status)
+		if status.Err() != nil {
+			g.Log.Warn("waiting for redis to boot up", status.Err().Error)
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		if i == 2 {
+			return nil, status.Err()
+		}
+		break
+	}
+	return rdb, nil
 }
