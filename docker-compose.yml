@@ -1,30 +1,30 @@
 version: '3.8'
 services:
-  chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.2
-    build: web/
-    depends_on:
-      - chrysedgeserver
-      - redis
-    ports:
-      - "80:80"
-    networks:
-      - chrysnet
-  chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.2
-    build: server/
-    restart: always
-    depends_on:
-      - redis
-    entrypoint: /app/main
-    ports:
-      - "8080:8080"
-      - "50001:50001"
-    volumes:
-      - /data/chrysalis:/data/chrysalis
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks: 
-      - chrysnet
+  # chrysedgeportal:
+  #   image: chryscloud/chrysedgeportal:0.0.2
+  #   build: web/
+  #   depends_on:
+  #     # - chrysedgeserver
+  #     - redis
+  #   ports:
+  #     - "80:80"
+  #   networks:
+  #     - chrysnet
+  # chrysedgeserver:
+  #   image: chryscloud/chrysedgeserver:0.0.2
+  #   build: server/
+  #   restart: always
+  #   depends_on:
+  #     - redis
+  #   entrypoint: /app/main
+  #   ports:
+  #     - "8080:8080"
+  #     - "50001:50001"
+  #   volumes:
+  #     - /data/chrysalis:/data/chrysalis
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks: 
+  #     - chrysnet
   redis:
     image: "redis:alpine"
     ports:

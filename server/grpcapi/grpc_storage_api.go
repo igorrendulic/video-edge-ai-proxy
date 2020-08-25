@@ -79,7 +79,7 @@ func (gih *grpcImageHandler) enableDisableStorageAPICall(storageOn bool, rtmpEnd
 		return eErr
 	}
 
-	_, apiErr := gih.edgeService.CallAPIWithBody("PUT", g.Conf.API.Endpoint+"/api/v1/vbox/storage/"+key, input, edgeKey, edgeSecret)
+	_, apiErr := gih.edgeService.CallAPIWithBody("PUT", g.Conf.API.Endpoint+"/api/v1/edge/storage/"+key, input, edgeKey, edgeSecret)
 	if apiErr != nil {
 		g.Log.Error("failed to call Chrysalis Edge API: ", apiErr)
 		return apiErr
