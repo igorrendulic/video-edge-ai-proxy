@@ -24,7 +24,7 @@ func (gih *grpcImageHandler) Proxy(ctx context.Context, req *pb.ProxyRequest) (*
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if info.RTMPEndpoint == "" && req.Passthrough {
-		return nil, status.Errorf(codes.InvalidArgument, "device "+deviceID+" doesn't have an associated RTMP stream")
+		return nil, status.Errorf(codes.InvalidArgument, "device "+deviceID+" doesn't have an associated RTMP stream. Visit https://cloud.chryscloud.com and add a RTMP stream.")
 	}
 
 	valMap := make(map[string]interface{}, 0)

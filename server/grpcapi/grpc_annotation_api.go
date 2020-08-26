@@ -19,7 +19,7 @@ func (gih *grpcImageHandler) Annotate(ctx context.Context, req *pb.AnnotateReque
 			return nil, status.Errorf(codes.InvalidArgument, "failed to read settings")
 		}
 		if settings.EdgeKey == "" {
-			return nil, status.Errorf(codes.InvalidArgument, "can't find edge key in settings. Required to use annotations")
+			return nil, status.Errorf(codes.InvalidArgument, "Can't find edge key in settings. required to use annotations. Visit https://cloud.chryscloud.com to enable annotations and storage capabilities from the edge.")
 		}
 		gih.edgeKey = &settings.EdgeKey
 	}

@@ -140,7 +140,7 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	grpcServer = grpc.NewServer()
 
 	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, edgeService, rdb))
-	g.Log.Info("Grpc Servier is ready to handle requests at 50001")
+	g.Log.Info("Grpc Server is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }
 

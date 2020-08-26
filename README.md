@@ -34,10 +34,11 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 * [Portal usage](#portal-usage)
 * [Client usage](#client-usage)
 * [Examples](#examples)
-  * [Example Prerequisites](#example-prerequisites)
-  * [Running basic_usage.py](#running-basic_usage.py)
-  * [Running opencv_display.py](#running-opencv_display.py)
-  * [Running annotation.py](#running-annotation_display.py)
+  * [Prerequisites](#example-prerequisites)
+  * [Running basic_usage.py](#example-prerequisites)
+  * [Running opencv_display.py](#example-prerequisites)
+  * [Running annotation.py](#example-prerequisites)
+  * [Running storage_onoff.py](#example-prerequisites)
 * [Build](#build)
 * [Custom configuration](#custom-configuration)
   * [Custom Redis Configuration](#custom-redis-configuration)
@@ -133,16 +134,9 @@ We're ready to consume frames from RTSP camera. Check the `/examples` folder.
 
 At this point you should have the video-edge-ai-proxy up and running and your first connection to RTSP camera made.
 
-
-
 ## Examples
 
 ### Example Prerequisites
-
-Generate python grpc stubs:
-```
-make examples
-```
 
 Create conda environment:
 ```
@@ -152,6 +146,12 @@ conda env create -f examples/environment.yml
 Activate environment:
 ```
 conda activate chrysedgeexamples
+cd examples
+```
+
+Generate python grpc stubs:
+```
+make examples
 ```
 
 ### Running `basic_usage.py`
@@ -219,6 +219,21 @@ python annotation.py --device test --type thisistest
 ```
 
 
+### Running `storage_onoff.py`
+
+Storage example turn Chrysalis Cloud storage on or off for the current live stream from the cameras. 
+
+Run example to turn storage on for camera `test`:
+```
+python storage_onoff.py --device test --on true
+```
+
+Run example to turn storage off for camera `test`:
+```
+python storage_onoff.py --device test --on false
+```
+
+
 ## Build
 
 Building from source code:
@@ -237,8 +252,11 @@ Default configuration is in the root folder of this project: `./redis.conf`
 2. Uncomment volumes section in redis config
 ```yaml   
     # volumes:
-    #   - /data/chrysalis/redis:/var/lib/redis
-    #   - $PWD/redis.conf:/usr/local/etc/redis/redis.conf
+    #   - /data/chrysalis/redis:/data
+    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
+    # command:
+    #   - redis-server
+    #   - /usr/local/etc/redis/redis.conf
 ```
 
 ## Custom Chrysalis configuration

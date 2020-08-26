@@ -70,18 +70,18 @@ func (gih *grpcImageHandler) enableDisableStorageAPICall(storageOn bool, rtmpEnd
 		Enable: storageOn,
 	}
 	if g.Conf.API.Endpoint == "" {
-		return errors.New("missing Chrysalis API endpoint")
+		return errors.New("missing Chrysalis Cloud API endpoint in settings")
 	}
 
 	edgeKey, edgeSecret, eErr := gih.settingsManager.GetCurrentEdgeKeyAndSecret()
 	if eErr != nil {
-		g.Log.Error("failed to retreive edge key and secret", eErr)
-		return eErr
+		g.Log.Error("Can't find edge key and secret. Visit https://cloud.chryscloud.com to enable annotation and storage.", eErr)
+		return errors.New("Can't find edge key and secret. Visit https://cloud.chryscloud.com to enable annotation and storage.")
 	}
 
 	_, apiErr := gih.edgeService.CallAPIWithBody("PUT", g.Conf.API.Endpoint+"/api/v1/edge/storage/"+key, input, edgeKey, edgeSecret)
 	if apiErr != nil {
-		g.Log.Error("failed to call Chrysalis Edge API: ", apiErr)
+		g.Log.Error("failed to call Chrysalis Cloud API: ", apiErr)
 		return apiErr
 	}
 	return nil
