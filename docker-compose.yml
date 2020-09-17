@@ -4,7 +4,7 @@ services:
     image: chryscloud/chrysedgeportal:0.0.2
     build: web/
     depends_on:
-      # - chrysedgeserver
+      - chrysedgeserver
       - redis
     ports:
       - "80:80"
@@ -29,12 +29,12 @@ services:
     image: "redis:alpine"
     ports:
       - "6379:6379"
-    volumes:
-      - /data/chrysalis/redis:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command:
-      - redis-server
-      - /usr/local/etc/redis/redis.conf
+    # volumes:
+    #   - /data/chrysalis/redis:/data
+    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
+    # command:
+    #   - redis-server
+    #   - /usr/local/etc/redis/redis.conf
   
     networks: 
       - chrysnet

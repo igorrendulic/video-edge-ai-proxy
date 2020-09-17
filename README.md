@@ -103,7 +103,7 @@ Create the folder if it doesn't exist and make sure it's writtable by docker pro
 
 `Start video-edge-ai-proxy`:
 ```bash
-docker-compose -d up
+docker-compose up -d
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
