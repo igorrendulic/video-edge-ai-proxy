@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	dockerErrors "github.com/docker/docker/client"
 	"github.com/go-redis/redis/v7"
 )
@@ -78,10 +80,27 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 		NetworkMode: container.NetworkMode("chrysnet"),
 	}
 
-	envVars := []string{"rtsp_endpoint=" + process.RTSPEndpoint, "device_id=" + process.Name}
+	if g.Conf.Buffer.OnDisk {
+		mounts := make([]mount.Mount, 0)
+		mount := mount.Mount{
+			Type:     mount.TypeBind,
+			Source:   g.Conf.Buffer.OnDiskFolder,
+			Target:   g.Conf.Buffer.OnDiskFolder,
+			ReadOnly: false,
+		}
+		mounts = append(mounts, mount)
+
+		hostConfig.Mounts = mounts
+	}
+
+	envVars := []string{"rtsp_endpoint=" + process.RTSPEndpoint, "device_id=" + process.Name, "in_memory_buffer=" + strconv.Itoa(g.Conf.Buffer.InMemory)}
 	if process.RTMPEndpoint != "" {
 		envVars = append(envVars, "rtmp_endpoint="+process.RTMPEndpoint)
 	}
+	if g.Conf.Buffer.OnDisk {
+		envVars = append(envVars, "disk_buffer_path="+g.Conf.Buffer.OnDiskFolder)
+	}
+
 	envVars = append(envVars, "PYTHONUNBUFFERED=0")
 
 	_, err := cl.ContainerCreate(strings.ToLower(process.Name), &container.Config{

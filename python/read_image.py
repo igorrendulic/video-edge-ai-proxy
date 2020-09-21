@@ -21,10 +21,11 @@ from global_vars import query_timestamp, RedisLastAccessPrefix, RedisIsKeyFrameO
 
 class ReadImage(threading.Thread):
 
-    def __init__(self, packet_queue, device_id, redis_conn, is_decode_packets_event, lock_condition):
+    def __init__(self, packet_queue, device_id, memory_buffer, redis_conn, is_decode_packets_event, lock_condition):
         threading.Thread.__init__(self)
         self._packet_queue = packet_queue
         self.device_id = device_id
+        self._memory_buffer = memory_buffer
         self.redis_conn = redis_conn
         self.is_decode_packets_event = is_decode_packets_event
         self.lock_condition = lock_condition
@@ -117,7 +118,7 @@ class ReadImage(threading.Thread):
 
                                     vfData = vf.SerializeToString()
 
-                                    self.redis_conn.xadd(self.device_id, {'data': vfData}, maxlen=60)
+                                    self.redis_conn.xadd(self.device_id, {'data': vfData}, maxlen=self._memory_buffer)
 
                                     if decode_only_keyframes:
                                         break

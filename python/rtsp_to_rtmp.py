@@ -30,9 +30,10 @@ from global_vars import query_timestamp, RedisIsKeyFrameOnlyPrefix, RedisLastAcc
 
 class RTSPtoRTMP(threading.Thread):
 
-    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, redis_conn, is_decode_packets_event, lock_condition):
+    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, disk_path, redis_conn, is_decode_packets_event, lock_condition):
         threading.Thread.__init__(self) 
         self._packet_queue = packet_queue
+        self._disk_path = disk_path
         self.rtsp_endpoint = rtsp_endpoint
         self.rtmp_endpoint = rtmp_endpoint
         self.redis_conn = redis_conn
@@ -67,10 +68,10 @@ class RTSPtoRTMP(threading.Thread):
                     self.in_audio_stream = self.in_container.streams.audio[0]
 
                 # init mp4 local archive
-
-                self._mp4archive = StoreMP4VideoChunks(queue=packet_group_queue, path="/data/chrysalis/archive", device_id=self.device_id, video_stream=self.in_video_stream, audio_stream=self.in_audio_stream)
-                self._mp4archive.daemon = True
-                self._mp4archive.start()
+                if self._disk_path is not None:
+                    self._mp4archive = StoreMP4VideoChunks(queue=packet_group_queue, path=self._disk_path, device_id=self.device_id, video_stream=self.in_video_stream, audio_stream=self.in_audio_stream)
+                    self._mp4archive.daemon = True
+                    self._mp4archive.start()
 
             except Exception as ex:
                 print("failed to connect to RTSP camera", ex)
@@ -98,9 +99,11 @@ class RTSPtoRTMP(threading.Thread):
 
                     if len(current_packet_group) > 0:
                         packet_group = current_packet_group.copy()
-                        # TODO: send to archiver! (packet_group, iframe_start_timestamp)
-                        apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
-                        packet_group_queue.put(apg)
+                        
+                        # send to archiver! (packet_group, iframe_start_timestamp)
+                        if self._disk_path is not None:
+                            apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
+                            packet_group_queue.put(apg)
 
                     keyframe_found = True
                     current_packet_group = []
@@ -190,12 +193,16 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str, default=None, required=True)
     parser.add_argument("--rtmp", type=str, default=None, required=False)
     parser.add_argument("--device_id", type=str, default=None, required=True)
+    parser.add_argument("--memory_buffer", type=int, default=1, required=False)
+    parser.add_argument("--disk_path", type=str, default=None, required=False)
 
     args = parser.parse_args()
 
     rtmp = args.rtmp
     rtsp = args.rtsp
     device_id = args.device_id
+    memory_buffer=args.memory_buffer
+    disk_path=args.disk_path
 
     decode_packet = threading.Event()
     lock_condition = threading.Condition()
@@ -203,6 +210,8 @@ if __name__ == "__main__":
     print("RTPS Endpoint: ",rtsp)
     print("RTMP Endpoint: ", rtmp)
     print("Device ID: ", device_id)
+    print("memory buffer: ", memory_buffer)
+    print("disk path: ", disk_path)
 
     redis_conn = None
     try:
@@ -223,7 +232,8 @@ if __name__ == "__main__":
     th = RTSPtoRTMP(rtsp_endpoint=rtsp, 
                     rtmp_endpoint=rtmp, 
                     packet_queue=packet_queue, 
-                    device_id=device_id, 
+                    device_id=device_id,
+                    disk_path=disk_path, 
                     redis_conn=redis_conn, 
                     is_decode_packets_event=decode_packet, 
                     lock_condition=lock_condition)
@@ -232,6 +242,7 @@ if __name__ == "__main__":
 
     ri = ReadImage(packet_queue=packet_queue, 
         device_id=device_id, 
+        memory_buffer=memory_buffer,
         redis_conn=redis_conn, 
         is_decode_packets_event=decode_packet, 
         lock_condition=lock_condition)

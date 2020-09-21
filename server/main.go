@@ -70,6 +70,12 @@ func main() {
 			Database:   0,
 			Password:   "",
 		}
+		conf.Buffer = &globals.BufferSubconfig{
+			InMemory:               1,
+			OnDisk:                 false,
+			OnDiskCleanupOlderThan: "30s",
+			OnDiskSchedule:         "@every 5m",
+		}
 	} else {
 		// custom config file exists
 		err := cfg.NewYamlConfig(defaultDBPath+"/conf.yaml", &conf)
@@ -107,6 +113,9 @@ func main() {
 	edgeService := services.NewEdgeService()
 
 	gin.SetMode(conf.Mode)
+
+	// starting cron jobs
+	StartCronJobs(conf)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)
 	router = r.ConfigAPI(router, processService, settingsService)

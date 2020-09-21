@@ -31,6 +31,7 @@ type Config struct {
 	Redis          *RedisSubconfig      `yaml:"redis"`
 	Annotation     *AnnotationSubconfig `yaml:"annotation"`
 	API            *ApiSubconfig        `yaml:"api"`
+	Buffer         *BufferSubconfig     `yaml:"buffer"`
 }
 
 // RedisSubconfig connnection settings
@@ -51,6 +52,15 @@ type AnnotationSubconfig struct {
 // VideoApiSubconfig - video api specifics
 type ApiSubconfig struct {
 	Endpoint string `yaml:"endpoint"` // video storage on/off endpoint
+}
+
+// Buffer - in memory and on disk buffering
+type BufferSubconfig struct {
+	InMemory               int    `yaml:"in_memory"`                // number of decoded frames to store in memory per camera
+	OnDisk                 bool   `yaml:"on_disk"`                  // store key-frame segmented mp4 files to disk
+	OnDiskCleanupOlderThan string `yaml:"on_disk_clean_older_than"` // clean up mp4 segments after X time
+	OnDiskFolder           string `yaml:"on_disk_folder"`           // location to store mp4 segments
+	OnDiskSchedule         string `yaml:"on_disk_schedule"`         // schedule cleanup every X duration
 }
 
 func init() {
