@@ -14,10 +14,9 @@ require (
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/golang/protobuf v1.4.2
 	github.com/kr/pretty v0.2.1 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20200624020401-64a14ca9d1ad // indirect
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.25.0 // indirect
-	gopkg.in/bsm/ratelimit.v1 v1.0.0-20160220154919-db14e161995a // indirect
-	gopkg.in/redis.v3 v3.6.4
 )
