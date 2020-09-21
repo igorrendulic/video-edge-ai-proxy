@@ -14,139 +14,26 @@
 
 import av
 import time
-import threading, queue
 import os
 import io
 from av.filter import Filter, Graph
 from av.codec import CodecContext
 import redis
-import numpy as np
-from proto import video_streaming_pb2
+import threading, queue
+from read_image import ReadImage
 import random
 from argparse import ArgumentParser
 import sys
+from archive import StoreMP4VideoChunks
+from global_vars import query_timestamp, RedisIsKeyFrameOnlyPrefix, RedisLastAccessPrefix, ArchivePacketGroup
 
-query_timestamp = None
-RedisLastAccessPrefix = "last_access_time_"
-RedisIsKeyFrameOnlyPrefix = "is_key_frame_only_"
-
-class ReadImage(threading.Thread):
-
-    def __init__(self, packet_queue, device_id, redis_conn, is_decode_packets_event, lock_condition):
-        threading.Thread.__init__(self)
-        self._packet_queue = packet_queue
-        self.device_id = device_id
-        self.redis_conn = redis_conn
-        self.is_decode_packets_event = is_decode_packets_event
-        self.lock_condition = lock_condition
-        self.last_query_timestamp = 0
-        self.packet_group = []
-
-    # checks if only keyframes requested
-    def check_decode_only_keyframes(self):
-        global RedisIsKeyFrameOnlyPrefix
-        decode_only_keyframes = False
-        decodeOnlyKeyFramesKey = RedisIsKeyFrameOnlyPrefix + self.device_id
-        only_keyframes = self.redis_conn.get(decodeOnlyKeyFramesKey)
-        if only_keyframes is not None:
-            okeys = only_keyframes.decode('utf-8')
-            if okeys.lower() == "true":
-                decode_only_keyframes = True
-        return decode_only_keyframes
-
-    def run(self):
-        global query_timestamp
-
-        packet_count = 0
-        keyframes_count = 0
-
-        while True:
-            with self.lock_condition:
-                self.lock_condition.wait()
-
-                if not self._packet_queue.empty() and self.is_decode_packets_event.is_set():
-                    try:
-                        packet = self._packet_queue.get()
-
-                        decode_only_keyframes = self.check_decode_only_keyframes()
-
-                        if packet.is_keyframe:
-                            self.packet_group = []
-                            packet_count = 0
-                            keyframes_count = keyframes_count + 1
-                        
-                        self.packet_group.append(packet)
-
-                        should_decode = False
-                        if query_timestamp is None:
-                            should_decode = False
-                        if query_timestamp > self.last_query_timestamp:
-                            should_decode = True
-
-                        # if only keyframes, then decode only when len of packet_group == 1
-                        if decode_only_keyframes:
-                            should_decode = False
-
-                        if len(self.packet_group) == 1 or should_decode: # by default decode every keyframe
-                            for index, p in enumerate(self.packet_group):
-
-                                # skip already decoded packets in this packet group
-                                if index < packet_count:
-                                    continue
-
-                                for frame in p.decode() or ():
-                                    
-                                    timestamp = int(round(time.time() * 1000))
-                                    if frame.time is not None:
-                                        timestamp = int(frame.time * frame.time_base.denominator)
-
-                                    # add numpy array byte to redis stream
-                                    img = frame.to_ndarray(format='bgr24')
-                                    shape = img.shape
-
-                                    img_bytes = np.ndarray.tobytes(img)
-
-                                    vf = video_streaming_pb2.VideoFrame()
-                                    vf.data = img_bytes
-                                    vf.width = frame.width
-                                    vf.height = frame.height
-                                    vf.timestamp = timestamp
-                                    vf.frame_type = frame.pict_type.name
-                                    vf.pts = frame.pts
-                                    vf.dts = frame.dts
-                                    vf.packet = packet_count
-                                    vf.keyframe = keyframes_count
-                                    vf.time_base = float(frame.time_base)
-                                    vf.is_keyframe = packet.is_keyframe
-                                    vf.is_corrupt = packet.is_corrupt
-
-                                    for (i,dim) in enumerate(shape):
-                                        newDim = video_streaming_pb2.ShapeProto.Dim()
-                                        newDim.size = dim
-                                        newDim.name = str(i)
-                                        vf.shape.dim.append(newDim)
-
-                                    vfData = vf.SerializeToString()
-
-                                    self.redis_conn.xadd(self.device_id, {'data': vfData}, maxlen=60)
-
-                                    if decode_only_keyframes:
-                                        break
-
-                                    self.last_query_timestamp = query_timestamp
-
-                                packet_count = packet_count + 1
-
-                    except Exception as e:
-                        print("failed to deode packet", e)
-                    finally:
-                        self._packet_queue.task_done()
 
 class RTSPtoRTMP(threading.Thread):
 
-    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, redis_conn, is_decode_packets_event, lock_condition):
+    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, disk_path, redis_conn, is_decode_packets_event, lock_condition):
         threading.Thread.__init__(self) 
         self._packet_queue = packet_queue
+        self._disk_path = disk_path
         self.rtsp_endpoint = rtsp_endpoint
         self.rtmp_endpoint = rtmp_endpoint
         self.redis_conn = redis_conn
@@ -160,10 +47,14 @@ class RTSPtoRTMP(threading.Thread):
             c.link_to(n)
 
     def run(self):
-        global RedisLastAccessPrefix
+        global RedisLastAccessPrefix    
 
         current_packet_group = []
         flush_current_packet_group = False
+
+        # init archiving 
+        iframe_start_timestamp = 0
+        packet_group_queue = queue.Queue()
 
         should_mux = False
 
@@ -175,6 +66,13 @@ class RTSPtoRTMP(threading.Thread):
                 self.in_audio_stream = None
                 if len(self.in_container.streams.audio) > 0:
                     self.in_audio_stream = self.in_container.streams.audio[0]
+
+                # init mp4 local archive
+                if self._disk_path is not None:
+                    self._mp4archive = StoreMP4VideoChunks(queue=packet_group_queue, path=self._disk_path, device_id=self.device_id, video_stream=self.in_video_stream, audio_stream=self.in_audio_stream)
+                    self._mp4archive.daemon = True
+                    self._mp4archive.start()
+
             except Exception as ex:
                 print("failed to connect to RTSP camera", ex)
                 os._exit(1)
@@ -198,9 +96,19 @@ class RTSPtoRTMP(threading.Thread):
                 
                 if packet.is_keyframe:
                     # if we already found a keyframe previously, archive what we have
+
+                    if len(current_packet_group) > 0:
+                        packet_group = current_packet_group.copy()
+                        
+                        # send to archiver! (packet_group, iframe_start_timestamp)
+                        if self._disk_path is not None:
+                            apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
+                            packet_group_queue.put(apg)
+
                     keyframe_found = True
                     current_packet_group = []
-                
+                    iframe_start_timestamp = int(round(time.time() * 1000))
+
                 if keyframe_found == False:
                     print("skipping, since not a keyframe")
                     continue
@@ -285,12 +193,16 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str, default=None, required=True)
     parser.add_argument("--rtmp", type=str, default=None, required=False)
     parser.add_argument("--device_id", type=str, default=None, required=True)
+    parser.add_argument("--memory_buffer", type=int, default=1, required=False)
+    parser.add_argument("--disk_path", type=str, default=None, required=False)
 
     args = parser.parse_args()
 
     rtmp = args.rtmp
     rtsp = args.rtsp
     device_id = args.device_id
+    memory_buffer=args.memory_buffer
+    disk_path=args.disk_path
 
     decode_packet = threading.Event()
     lock_condition = threading.Condition()
@@ -298,10 +210,13 @@ if __name__ == "__main__":
     print("RTPS Endpoint: ",rtsp)
     print("RTMP Endpoint: ", rtmp)
     print("Device ID: ", device_id)
+    print("memory buffer: ", memory_buffer)
+    print("disk path: ", disk_path)
 
     redis_conn = None
     try:
         pool = redis.ConnectionPool(host="redis", port="6379")
+        # pool = redis.ConnectionPool(host="localhost", port="6379")
         redis_conn = redis.Redis(connection_pool=pool)
     except Exception as ex:
         print("failed to connect to redis instance", ex)
@@ -317,7 +232,8 @@ if __name__ == "__main__":
     th = RTSPtoRTMP(rtsp_endpoint=rtsp, 
                     rtmp_endpoint=rtmp, 
                     packet_queue=packet_queue, 
-                    device_id=device_id, 
+                    device_id=device_id,
+                    disk_path=disk_path, 
                     redis_conn=redis_conn, 
                     is_decode_packets_event=decode_packet, 
                     lock_condition=lock_condition)
@@ -326,6 +242,7 @@ if __name__ == "__main__":
 
     ri = ReadImage(packet_queue=packet_queue, 
         device_id=device_id, 
+        memory_buffer=memory_buffer,
         redis_conn=redis_conn, 
         is_decode_packets_event=decode_packet, 
         lock_condition=lock_condition)

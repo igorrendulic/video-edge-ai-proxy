@@ -103,7 +103,7 @@ Create the folder if it doesn't exist and make sure it's writtable by docker pro
 
 `Start video-edge-ai-proxy`:
 ```bash
-docker-compose -d up
+docker-compose up -d
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
@@ -282,6 +282,14 @@ annotation:
   unacked_limit: 1000
   poll_duration_ms: 300
   max_batch_size: 299
+
+buffer:
+  n_memory: 1 # number of images to store in memory buffer (1 = default)
+  on_disk: false # store key-frame separated mp4 file segments to disk
+  on_disk_folder: /data/chrysalis/archive
+  on_disk_clean_older_than: "5m" # remove older mp4 segments than 5m
+  on_disk_schedule: "@every 5s" #https://en.wikipedia.org/wiki/Cron
+
 ```
 
 - `mode: release`: disables debug mode for http server (default: release)
@@ -293,15 +301,23 @@ annotation:
 - `annotation -> unacked limit`: maximum number of unacknowledged annotatoons (default: 299)
 - `annotation -> poll_duration_ms`: poll every x miliseconds for batching purposes (default: 300ms)
 - `annotation -> max_match_size`: maximum number of annotation per batch size (default: 299)
+- `buffer -> in_memory`: number of decoded frames to store in memory per camera (default: 1)
+- `on_disk`: true/false, store key-frame chunked mp4 files to disk (default: false)
+- `on_disk_folder`: path to the folder where segments will be stored
+- `on_disk_clean_older_than`: remove mp4 segments older than (default: 5m)
+- `on_disk_schedule`: run disk cleanup scheduler cron job [#https://en.wikipedia.org/wiki/Cron](https://en.wikipedia.org/wiki/Cron)
 
+`on_disk` creates mp4 segments in format: `"current_timestamp in ms"_"duration_in_ms".mp4`. For example: `1600685088000_2000.mp4`
 
 # RoadMap
 
 - [X] Finish documentation
 - [X] Configuration (custom configuration)
 - [X] Set enable/disabled flag for storage
-- [ ] Bug(r) - occasionaly few packets for decoding skipped when enabling/disabling rtmp stream (visible only if high FPS on display)
 - [X] Add API key to Chrysalis Cloud for enable/disable storage
+- [X] Add configuration for in memory buffer pool of decoded image so they can be queried in the past
+- [X] Configuration and a cron job to store mp4 segments (1 per key-frame) from cameras and a cron job to clean old mp4 segments (rotating file buffer)
+- [ ] Add gRPC API to query in-memory buffer of images
 - [ ] Remote access Security (grpc TLS Client Authentication)
 - [ ] Remote access Security (TLS Client Authentication for web interface)
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)

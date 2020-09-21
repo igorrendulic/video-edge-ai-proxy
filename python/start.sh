@@ -8,6 +8,8 @@ set -e
 rtsp_endpoint=${rtsp_endpoint}
 device_id=${device_id}
 rtmp_endpoint=${rtmp_endpoint}
+in_memory_buffer=${in_memory_buffer}
+disk_buffer_path=${disk_buffer_path}
 
  if [ -z "$rtsp_endpoint" ]; then 
     echo "rtsp endpoint must be defined in environment variables"
@@ -19,13 +21,26 @@ if [ -z "$device_id" ]; then
 fi
 
 
-echo "Started python rtsp process..."
+echo "Connection to rtsp camera"
 source activate chrysedgeai
-if [ -z "$rtmp_endpoint" ]; then 
-    python -u rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id"    
-else
-    python -u rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id" --rtmp "$rtmp_endpoint"
+
+cmd=" -u rtsp_to_rtmp.py --rtsp $rtsp_endpoint --device_id $device_id"
+if [ ! -z "$rtmp_endpoint" ]; then 
+    # python  --memory_buffer "$in_memory_buffer" --disk_path "$disk_path" 
+    cmd="$cmd --rtmp $rtmp_endpoint"
+# else
+    # python -u rtsp_to_rtmp.py --rtsp "$rtsp_endpoint" --device_id "$device_id" --memory_buffer "$in_memory_buffer" --disk_path "$disk_buffer_path" --rtmp "$rtmp_endpoint"
 fi
+if [ ! -z "$in_memory_buffer" ]; then
+    cmd="$cmd --memory_buffer $in_memory_buffer"
+fi
+if [ ! -z "$disk_buffer_path" ]; then
+    cmd="$cmd --disk_path $disk_buffer_path"
+fi
+
+echo "running: $cmd"
+
+python $cmd
 
 echo $?
 echo "Cant start rtsp_to_rtmp.py. Exiting..."
