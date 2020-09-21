@@ -215,8 +215,8 @@ if __name__ == "__main__":
 
     redis_conn = None
     try:
-        # pool = redis.ConnectionPool(host="redis", port="6379")
-        pool = redis.ConnectionPool(host="localhost", port="6379")
+        pool = redis.ConnectionPool(host="redis", port="6379")
+        # pool = redis.ConnectionPool(host="localhost", port="6379")
         redis_conn = redis.Redis(connection_pool=pool)
     except Exception as ex:
         print("failed to connect to redis instance", ex)
