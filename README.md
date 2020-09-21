@@ -264,7 +264,7 @@ Default configuration is in the root folder of this project: `./redis.conf`
 Create `conf.yaml` file in `/data/chrysalis` folder. The configuration file is automatically picked up if it exists otherwise system fallbacks to it's default configuration.
 
 ```yaml
-version: 0.0.2-alpha
+version: 0.0.3
 title: Chrysalis Video Edge Proxy
 description: Chrysalis Video Edge Proxy Service for Computer Vision
 mode: release # "debug": or "release"
