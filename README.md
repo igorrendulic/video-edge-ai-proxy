@@ -56,7 +56,7 @@ docker pull chryscloud/chrysedgeproxy:0.0.1
 
 #### Enable docker TCP socket connection (Linux, Ubuntu 18.04 LTS)
 
-Create `daemon.json` file in `/etc/docker` folder and add in:
+Create `daemon.json` file in `/etc/docker` folder with JSON contents:
 ```json
 {
   "hosts": [
@@ -81,6 +81,11 @@ sudo systemctl daemon-reload
 Restart docker
 ```
 sudo service docker restart
+```
+
+You can test out if the configuration is correct by issuing curl request docker socket:
+```
+curl -s --unix-socket /var/run/docker.sock http://dummy/images/json | jq '.'
 ```
 
 ## Quick Start
