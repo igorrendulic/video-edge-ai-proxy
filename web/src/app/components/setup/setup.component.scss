@@ -1,0 +1,23 @@
+.setup-overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 10;
+
+    mat-progress-bar {
+        position: absolute;
+        top: 50%;
+    }
+
+    .setup-settings-msg {
+        align-items: center;
+        color: white;
+        font-size: 14px;
+        position: absolute;
+        top: 50%;
+        margin: auto;
+        width: 100%;
+        text-align: center;
+    }
+}

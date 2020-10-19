@@ -16,12 +16,18 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/chryscloud/go-microkit-plugins/docker"
+	"github.com/chryscloud/microkit-plugins/dockerhub"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/dgraph-io/badger/v2"
+	"github.com/hashicorp/go-version"
 )
 
 // SettingsManager - various settings for the edge
@@ -119,4 +125,104 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 
 func (sm *SettingsManager) Get() (*models.Settings, error) {
 	return sm.getDefault()
+}
+
+func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrade, error) {
+	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+	images, err := cl.ImagesList()
+	if err != nil {
+		return nil, err
+	}
+
+	var options dockerhub.Option
+	hubCl := dockerhub.NewClient(options)
+
+	remoteTags, err := hubCl.Tags(nameTag)
+	if err != nil {
+		g.Log.Error("failed to retrieve remote tags", err)
+		return nil, err
+	}
+
+	// getting local tags
+	localTags := make([]string, 0)
+
+	for _, img := range images {
+		tags := img.RepoTags
+		for _, tag := range tags {
+			if strings.HasPrefix(tag, nameTag) {
+				// get the tag version
+				splitted := strings.Split(tag, ":")
+				if len(splitted) == 2 {
+					v := strings.Trim(splitted[1], "")
+					if v != "latest" { // ignore latest versions
+						localTags = append(localTags, v)
+					}
+				}
+			}
+		}
+	}
+
+	highestRemoteTagVersion := ""
+	highestLocalTagVersion := ""
+	highestRemoteVersion := sm.findHighestVersion(remoteTags)
+	highestLocalVersion := sm.findHighestVersion(localTags)
+
+	hasUpgrade := false
+	if highestLocalVersion != nil && highestRemoteVersion != nil {
+		if highestLocalVersion.LessThan(highestRemoteVersion) {
+			hasUpgrade = true
+		}
+	}
+	if highestRemoteVersion != nil {
+		highestRemoteTagVersion = highestRemoteVersion.Original()
+	}
+	if highestLocalVersion != nil {
+		highestLocalTagVersion = highestLocalVersion.Original()
+	}
+
+	resp := &models.ImageUpgrade{
+		HasImage:             len(localTags) > 0,
+		HasUpgrade:           hasUpgrade,
+		Name:                 nameTag,
+		HighestRemoteVersion: highestRemoteTagVersion,
+		CurrentVersion:       highestLocalTagVersion,
+	}
+
+	return resp, nil
+}
+
+func (sm *SettingsManager) PullDockerImage(name, version string) (*models.PullDockerResponse, error) {
+	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+	resp, err := cl.ImagePullDockerHub(name, version, "", "")
+	if err != nil {
+		g.Log.Error("failed to pull image from dockerhub", name, version, err)
+		return nil, err
+	}
+
+	fmt.Printf("%v\n", resp)
+	g.Log.Info(resp)
+
+	response := &models.PullDockerResponse{
+		Response: resp,
+	}
+
+	return response, nil
+}
+
+func (sm *SettingsManager) findHighestVersion(versionsRaw []string) *version.Version {
+	if len(versionsRaw) == 0 {
+		return nil
+	}
+	versions := make([]*version.Version, 0)
+	for _, raw := range versionsRaw {
+		v, _ := version.NewVersion(raw)
+		if v != nil {
+			versions = append(versions, v)
+		}
+	}
+	sort.Sort(version.Collection(versions))
+	if len(versions) > 0 {
+		return versions[len(versions)-1]
+	}
+	return nil
 }

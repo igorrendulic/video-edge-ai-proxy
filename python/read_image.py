@@ -18,6 +18,7 @@ import numpy as np
 import time
 import redis
 from global_vars import query_timestamp, RedisLastAccessPrefix, RedisIsKeyFrameOnlyPrefix
+from datetime import datetime
 
 class ReadImage(threading.Thread):
 
@@ -45,7 +46,6 @@ class ReadImage(threading.Thread):
         return decode_only_keyframes
 
     def run(self):
-        global query_timestamp
 
         packet_count = 0
         keyframes_count = 0
@@ -67,11 +67,7 @@ class ReadImage(threading.Thread):
                         
                         self.packet_group.append(packet)
 
-                        should_decode = False
-                        if query_timestamp is None:
-                            should_decode = False
-                        if query_timestamp > self.last_query_timestamp:
-                            should_decode = True
+                        should_decode = True
 
                         # if only keyframes, then decode only when len of packet_group == 1
                         if decode_only_keyframes:
@@ -123,7 +119,7 @@ class ReadImage(threading.Thread):
                                     if decode_only_keyframes:
                                         break
 
-                                    self.last_query_timestamp = query_timestamp
+                                    # self.last_query_timestamp = query_timestamp
 
                                 packet_count = packet_count + 1
 

@@ -15,7 +15,9 @@
 package models
 
 const (
-	PrefixSettingsKey = "/settings/"
+	PrefixSettingsKey               = "/settings/"
+	PrefixSettingsDockerTagVersions = "/dockertagsettings/"
+
 	SettingDefaultKey = "default"
 )
 
@@ -26,4 +28,11 @@ type Settings struct {
 	EdgeSecret string `json:"edge_secret,omitempty"` // edge secret key generated on Chrysalis Cloud
 	Created    int64  `json:"created,omitempty"`
 	Modified   int64  `json:"modified,omitempty"`
+}
+
+// SettingsDockerTagVersion - current docker tag and version of the e.g. RTSP camera docker image
+type SettingDockerTagVersion struct {
+	Tag        string `json:"tag" binding:"required"`
+	Version    string `json:"version" binding:"required"`
+	CameraType string `json:"camera_type" binding:"required"` // e.g. rtsp for rtsp camera
 }

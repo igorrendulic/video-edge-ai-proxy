@@ -19,6 +19,9 @@ import argparse
 import cv2
 import numpy as np
 import time
+import os
+
+os.environ['DISPLAY'] = ":0"
 
 def gen_image_request(device_name, keyframe_only):
     """ Create an object to request a video frame """
@@ -39,6 +42,8 @@ if __name__ == "__main__":
     # grpc connection to video-edge-ai-proxy
     channel = grpc.insecure_channel('127.0.0.1:50001')
     stub = video_streaming_pb2_grpc.ImageStub(channel)
+
+    print(args.keyframe)
     
     while True:
         prev = int(time.time() * 1000)

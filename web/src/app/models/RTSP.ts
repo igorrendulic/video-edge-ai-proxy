@@ -13,4 +13,5 @@ export interface RTSP {
 
 export class GlobalVars {
     public static TempRTSPSearchResults:[RTSP];
+    public static CameraTypeRTSP = new Map<string,string>([["rtsp","rtsp"]]);
 }

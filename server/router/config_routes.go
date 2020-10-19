@@ -44,6 +44,8 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 		api.GET("processlist", processAPI.List)
 		api.GET("settings", settingsAPI.Get)
 		api.POST("settings", settingsAPI.Overwrite)
+		api.GET("dockerimages", settingsAPI.DockerImagesLocally)
+		api.GET("dockerpull", settingsAPI.DockerPullImage)
 	}
 
 	return router

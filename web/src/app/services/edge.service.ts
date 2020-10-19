@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { StreamProcess } from '../models/StreamProcess';
 import { RTSP } from '../models/RTSP';
 import { Settings } from '../models/Settings';
+import { ImageUpgrade, PullDockerResponse } from '../models/ImageUpgrade';
 
 @Injectable({
   providedIn: 'root'
@@ -29,15 +30,19 @@ export class EdgeService {
     return this.http.delete(environment.LocalServerURL + "/api/v1/process/" + name);
   }
 
-  rtspScan(ipRange:RTSP):Observable<[RTSP]> {
-    return this.http.post<[RTSP]>(environment.LocalServerURL + "/api/v1/rtspscan", ipRange);
-  }
-
   getSettings():Observable<Settings> {
     return this.http.get<Settings>(environment.LocalServerURL + "/api/v1/settings");
   }
 
   overwriteSettings(settings:Settings) {
     return this.http.post<Settings>(environment.LocalServerURL + "/api/v1/settings", settings);
+  }
+
+  getDockerImages(tag:string) {
+    return this.http.get<ImageUpgrade>(environment.LocalServerURL + "/api/v1/dockerimages?tag=" + tag);
+  }
+
+  pullDockerImage(tag:string,version:string) {
+    return this.http.get<PullDockerResponse>(environment.LocalServerURL + "/api/v1/dockerpull?tag=" + tag + "&version=" + version);
   }
 }

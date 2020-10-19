@@ -1,0 +1,27 @@
+<!-- <div *ngIf="loading" class="setup-overlay">
+  <mat-progress-bar mode="buffer"></mat-progress-bar>
+  <div class="setup-settings-msg">{{loadingMessage}}</div>
+</div> -->
+
+<div class="container" [class.is-mobile]="mobileQuery.matches">
+
+    <mat-toolbar class="toolbar" color="primary">
+        <h1 class="app-name">Chrysalis Edge Proxy - Initial Setup</h1>
+        <span class="spacer"></span>
+    </mat-toolbar>
+
+    <div fxFlex.sm="0 1 100%" fxLayout="column" fxLayoutAlign="center center">
+      <h1>Setup - Prepare docker image for type of camera used</h1>
+        <div class="docs-aiexamples-category-list">
+          <a class="docs-aiexamples-category-list-item" style="cursor: pointer;" (click)="initialSetup('rtsp')">
+              <div class="docs-aiexamples-list-card">
+                  <div class="docs-aiexamples-category-list-card-image-wrapper" style="background-image: url('/assets/docker_logo.svg');"></div>
+                  <div class="docs-aiexamples-category-list-card-title">RTSP Cameras</div>
+                  <div class="docs-aiexamples-category-list-card-summary">Download Image for running RTSP cameras</div>
+              </div>
+          </a>
+        </div>
+      
+      </div>
+
+  </div>

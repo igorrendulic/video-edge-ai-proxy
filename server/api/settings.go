@@ -60,3 +60,50 @@ func (sh *settingsHandler) Overwrite(c *gin.Context) {
 	}
 	c.Status(http.StatusAccepted)
 }
+
+// DockerImagesLocally finds images that correspond with the image_name and returns has_downloadded or maybe if upgraded needed (newer version available)
+func (sh *settingsHandler) DockerImagesLocally(c *gin.Context) {
+
+	tagName := c.Query("tag")
+	if tagName == "" {
+		AbortWithError(c, http.StatusNotFound, "not found")
+		return
+	}
+
+	images, err := sh.settingsManager.ListDockerImages(tagName)
+	if err != nil {
+		g.Log.Error("failed to list docker image", err)
+		AbortWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, images)
+}
+
+func (sh *settingsHandler) DockerPullImage(c *gin.Context) {
+	name := c.Query("tag")
+	version := c.Query("version")
+
+	if name == "" || version == "" {
+		AbortWithError(c, http.StatusNotFound, "not found")
+		return
+	}
+
+	pullResp, err := sh.settingsManager.PullDockerImage(name, version)
+	if err != nil {
+		g.Log.Error("failed to pull docker image", err)
+		AbortWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, pullResp)
+}
+
+func (sh *settingsHandler) SetCurrentCameraDockerImageVersion(c *gin.Context) {
+	tagWithVersion := c.Query("tag")
+	if tagWithVersion == "" {
+		AbortWithError(c, http.StatusBadRequest, "tag with version missing")
+		return
+	}
+
+}

@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/adjust/rmq/v2 v2.0.0-20200523123200-98c5e969f342
 	github.com/chryscloud/go-microkit-plugins v1.0.2
+	github.com/chryscloud/microkit-plugins v0.0.0-20200824191810-84e7409ad039
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
 	github.com/docker/docker v1.13.1
@@ -13,6 +14,7 @@ require (
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/golang/protobuf v1.4.2
+	github.com/hashicorp/go-version v1.2.1
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.6.1 // indirect
