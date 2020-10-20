@@ -320,10 +320,8 @@ annotation:
 buffer:
   n_memory: 1 # number of images to store in memory buffer (1 = default)
   on_disk: false # store key-frame separated mp4 file segments to disk
-  on_disk_folder: /data/chrysalis/archive
+  on_disk_folder: /data/chrysalis/archive # can be any custom folder you'd like to store video segments to
   on_disk_clean_older_than: "5m" # remove older mp4 segments than 5m
-  on_disk_schedule: "@every 5s" #https://en.wikipedia.org/wiki/Cron
-
 ```
 
 - `mode: release`: disables debug mode for http server (default: release)
