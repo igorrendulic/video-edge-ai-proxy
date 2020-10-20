@@ -54,7 +54,9 @@ Pull `rtsp_to_rtmp` docker image from dockerhub to your local computer:
 docker pull chryscloud/chrysedgeproxy:0.0.1
 ```
 
-#### Enable docker TCP socket connection (Linux, Ubuntu 18.04 LTS)
+#### Enable docker TCP socket connection
+
+`This settings are not required if you running on Mac OS X. Only make sure that docker-compose and docker are updated to the latest versions`.
 
 Create `daemon.json` file in `/etc/docker` folder with JSON contents:
 ```json
@@ -98,17 +100,44 @@ By default video-edge-ai-proxy requires these ports:
 
 Make sure before your run it that these ports are available.
 
-### How to run
+### How to run (Linux - Ubuntu)
 
 video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
 - */data/chrysalis*
 
 Create the folder if it doesn't exist and make sure it's writtable by docker process.
 
+`Start video-edge-ai-proxy` avoiding initial build process:
+```bash
+docker-compose pull
+docker-compose up -d --no-build
+```
 
-`Start video-edge-ai-proxy`:
+In case you cloned this repository you can run docker-compose with build command. 
+`Start video-edge-ai-proxy` with local build:
 ```bash
 docker-compose up -d
+```
+
+### How to run (Mac OS X)
+
+video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
+- */data/chrysalis*
+
+In order to run on Mac we need to change this folder:
+
+Open up `docker-compose.yml` file and and under `chrysedgeserver` change the default path to your custom folder (e.g. `/Users/myname/data`)
+Create the folder if it doesn't exist and make sure it's writtable by docker process.
+
+```yml
+volumes:
+      - //Users/myname/data:/data/chrysalis
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+`Start video-edge-ai-proxy` avoiding initial build process:
+```bash
+docker-compose pull
+docker-compose up -d --no-build
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`

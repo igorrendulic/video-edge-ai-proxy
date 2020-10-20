@@ -34,7 +34,7 @@ class StoreMP4VideoChunks(threading.Thread):
         while True:
             try:
                 archive_group = self.q.get(timeout=5) # 5s timeout
-                print(archive_group.packet_group, archive_group.start_timestamp)
+                # print(archive_group.packet_group, archive_group.start_timestamp)
                 self.saveToMp4(archive_group.packet_group, archive_group.start_timestamp)
             except queue.Empty:
                 continue
@@ -70,7 +70,7 @@ class StoreMP4VideoChunks(threading.Thread):
             segment_length = (maximum_dts - minimum_dts) * time_base
 
         segment_length = int(segment_length * 1000) # convert to milliseconds
-        print(segment_length)
+        # print(segment_length)
 
         output_file_name = self.path + "/" + str(start_timestamp) + "_" + str(segment_length) + ".mp4"
         output = av.open(output_file_name, format="mp4", mode='w')
@@ -81,7 +81,7 @@ class StoreMP4VideoChunks(threading.Thread):
         for _,p in enumerate(packet_store):
             p.dts -= minimum_dts
             p.pts -= minimum_dts
-            print(p.dts, p.pts)
+            # print(p.dts, p.pts)
 
         for _,p in enumerate(packet_store):
             # print ("PRE ", p, p.dts, p.pts, p.stream.type)

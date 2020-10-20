@@ -99,16 +99,22 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 	}
 	if g.Conf.Buffer.OnDisk {
 		envVars = append(envVars, "disk_buffer_path="+g.Conf.Buffer.OnDiskFolder)
+		envVars = append(envVars, "disk_cleanup_rate="+g.Conf.Buffer.OnDiskCleanupOlderThan)
 	}
 
 	envVars = append(envVars, "PYTHONUNBUFFERED=0")
 
-	_, err := cl.ContainerCreate(strings.ToLower(process.Name), &container.Config{
+	_, ccErr := cl.ContainerCreate(strings.ToLower(process.Name), &container.Config{
 		Image: process.ImageTag,
 		Env:   envVars,
 	}, hostConfig, nil)
 
-	err = cl.ContainerStart(process.Name)
+	if ccErr != nil {
+		g.Log.Error("failed to create container ", process.Name, ccErr)
+		return ccErr
+	}
+
+	err := cl.ContainerStart(process.Name)
 	if err != nil {
 		g.Log.Error("failed to start container", process.Name, err)
 		return err

@@ -25,6 +25,7 @@ import random
 from argparse import ArgumentParser
 import sys
 from archive import StoreMP4VideoChunks
+from disk_cleanup import CleanupScheduler
 from global_vars import query_timestamp, RedisIsKeyFrameOnlyPrefix, RedisLastAccessPrefix, ArchivePacketGroup
 
 
@@ -195,6 +196,7 @@ if __name__ == "__main__":
     parser.add_argument("--device_id", type=str, default=None, required=True)
     parser.add_argument("--memory_buffer", type=int, default=1, required=False)
     parser.add_argument("--disk_path", type=str, default=None, required=False)
+    parser.add_argument("--disk_cleanup_rate", type=str, default=None, required=False)
 
     args = parser.parse_args()
 
@@ -203,6 +205,7 @@ if __name__ == "__main__":
     device_id = args.device_id
     memory_buffer=args.memory_buffer
     disk_path=args.disk_path
+    disk_cleanup_rate=args.disk_cleanup_rate
 
     decode_packet = threading.Event()
     lock_condition = threading.Condition()
@@ -248,6 +251,18 @@ if __name__ == "__main__":
         lock_condition=lock_condition)
     ri.daemon = True
     ri.start()
+
+    if disk_path is not None:
+        if disk_cleanup_rate is None:
+            disk_cleanup_rate = "1m"
+
+        st = CleanupScheduler(folder=disk_path, device=device_id, remove_older_than=disk_cleanup_rate)
+        st.daemon = True
+        st.start()
+
     ri.join()
     
     th.join()
+
+    if disk_path is not None:
+        st.join()

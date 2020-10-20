@@ -50,6 +50,8 @@ class ReadImage(threading.Thread):
         packet_count = 0
         keyframes_count = 0
 
+        query_timestamp = self.last_query_timestamp
+
         while True:
             with self.lock_condition:
                 self.lock_condition.wait()
@@ -67,12 +69,7 @@ class ReadImage(threading.Thread):
                         
                         self.packet_group.append(packet)
 
-                        should_decode = False
-                        if query_timestamp is None:
-                            should_decode = False
-                        if query_timestamp > self.last_query_timestamp:
-                            should_decode = True
-
+                        should_decode = True
                         # if only keyframes, then decode only when len of packet_group == 1
                         if decode_only_keyframes:
                             should_decode = False

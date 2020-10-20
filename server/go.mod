@@ -13,6 +13,7 @@ require (
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/golang/protobuf v1.4.2
+	github.com/karrick/godirwalk v1.16.1
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.6.1 // indirect
