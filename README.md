@@ -51,7 +51,7 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 Pull `rtsp_to_rtmp` docker image from dockerhub to your local computer:
 ```bash
-docker pull chryscloud/chrysedgeproxy:0.0.1
+docker pull chryscloud/chrysedgeproxy:0.0.2
 ```
 
 #### Enable docker TCP socket connection
