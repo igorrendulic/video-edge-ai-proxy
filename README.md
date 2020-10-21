@@ -30,7 +30,6 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 * [Prerequisites](#prerequisites)
 * [Quick Start](#quick-start)
-    * [How to run](#how-to-run)
 * [Portal usage](#portal-usage)
 * [Client usage](#client-usage)
 * [Examples](#examples)
@@ -43,6 +42,7 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 * [Custom configuration](#custom-configuration)
   * [Custom Redis Configuration](#custom-redis-configuration)
   * [Custom Chrysalis Configuration](#custom-chrysalis-configuration)
+* [Building from source](#building-from-source)
 
 ## Prerequisites
 
@@ -100,48 +100,71 @@ By default video-edge-ai-proxy requires these ports:
 
 Make sure before your run it that these ports are available.
 
-### How to run (Linux - Ubuntu)
+If running on Mac OS X make sure to modify `/data/chrysalis` to a more Mac OS friendly folder e.g. `/Users/usename/data` under `chrysedgeserver` -> `volumes`. 
 
-video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
-- */data/chrysalis*
+Create a directory: `/data/chrysalis` or for Mac OS X: `/Users/usename/data`
 
-Create the folder if it doesn't exist and make sure it's writtable by docker process.
-
-`Start video-edge-ai-proxy` avoiding initial build process:
-```bash
-docker-compose pull
-docker-compose up -d --no-build
-```
-
-In case you cloned this repository you can run docker-compose with build command. 
-`Start video-edge-ai-proxy` with local build:
-```bash
-docker-compose up -d
-```
-
-### How to run (Mac OS X)
-
-video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
-- */data/chrysalis*
-
-In order to run on Mac we need to change this folder:
-
-Open up `docker-compose.yml` file and and under `chrysedgeserver` change the default path to your custom folder (e.g. `/Users/myname/data`)
-Create the folder if it doesn't exist and make sure it's writtable by docker process.
+Copy and paste `docker-compose.yml` to folder of your choice (recommended to be different than /data/chrysalis):
 
 ```yml
-volumes:
-      - //Users/myname/data:/data/chrysalis
+version: '3.8'
+services:
+  chrysedgeportal:
+    image: chryscloud/chrysedgeportal:0.0.4
+    build: web/
+    depends_on:
+      - chrysedgeserver
+      - redis
+    ports:
+      - "80:80"
+    networks:
+      - chrysnet
+  chrysedgeserver:
+    image: chryscloud/chrysedgeserver:0.0.4
+    build: server/
+    restart: always
+    depends_on:
+      - redis
+    entrypoint: /app/main
+    ports:
+      - "8080:8080"
+      - "50001:50001"
+    volumes:
+      - /data/chrysalis:/data/chrysalis
       - /var/run/docker.sock:/var/run/docker.sock
+    networks: 
+      - chrysnet
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    # volumes:
+    #   - /data/chrysalis/redis:/data
+    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
+    # command:
+    #   - redis-server
+    #   - /usr/local/etc/redis/redis.conf
+  
+    networks: 
+      - chrysnet
+
+networks:
+  chrysnet:
+    name: chrysnet
 ```
-`Start video-edge-ai-proxy` avoiding initial build process:
+
+Pull a RTSP container that video-edge-ai-proxy will run for your CCTV Network IP cameras (currently H.264 support only):
+```bash
+docker pull chryscloud/chrysedgeproxy:0.0.2
+```
+
+Start video-edge-ai-proxy:
 ```bash
 docker-compose pull
 docker-compose up -d --no-build
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
-
 
 ## Portal usage
 
@@ -340,6 +363,25 @@ buffer:
 - `on_disk_schedule`: run disk cleanup scheduler cron job [#https://en.wikipedia.org/wiki/Cron](https://en.wikipedia.org/wiki/Cron)
 
 `on_disk` creates mp4 segments in format: `"current_timestamp in ms"_"duration_in_ms".mp4`. For example: `1600685088000_2000.mp4`
+
+### Building from source
+
+```
+git clone 
+```
+
+video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
+- */data/chrysalis*
+
+Create the folder if it doesn't exist and make sure it's writtable by docker process.
+
+In case you cloned this repository you can run docker-compose with build command. 
+`Start video-edge-ai-proxy` with local build:
+```bash
+docker-compose up -d
+```
+
+
 
 # RoadMap
 
