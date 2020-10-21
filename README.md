@@ -365,7 +365,7 @@ buffer:
 ### Building from source
 
 ```
-git clone 
+git clone https://github.com/chryscloud/video-edge-ai-proxy.git
 ```
 
 video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
