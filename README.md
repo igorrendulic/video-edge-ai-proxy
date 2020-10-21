@@ -30,7 +30,6 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 * [Prerequisites](#prerequisites)
 * [Quick Start](#quick-start)
-    * [How to run](#how-to-run)
 * [Portal usage](#portal-usage)
 * [Client usage](#client-usage)
 * [Examples](#examples)
@@ -39,10 +38,10 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
   * [Running opencv_display.py](#example-prerequisites)
   * [Running annotation.py](#example-prerequisites)
   * [Running storage_onoff.py](#example-prerequisites)
-* [Build](#build)
 * [Custom configuration](#custom-configuration)
   * [Custom Redis Configuration](#custom-redis-configuration)
   * [Custom Chrysalis Configuration](#custom-chrysalis-configuration)
+* [Building from source](#building-from-source)
 
 ## Prerequisites
 
@@ -51,10 +50,12 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 
 Pull `rtsp_to_rtmp` docker image from dockerhub to your local computer:
 ```bash
-docker pull chryscloud/chrysedgeproxy:0.0.1
+docker pull chryscloud/chrysedgeproxy:0.0.2
 ```
 
-#### Enable docker TCP socket connection (Linux, Ubuntu 18.04 LTS)
+#### Enable docker TCP socket connection
+
+`This settings are not required if you running on Mac OS X. Only make sure that docker-compose and docker are updated to the latest versions`.
 
 Create `daemon.json` file in `/etc/docker` folder with JSON contents:
 ```json
@@ -98,21 +99,69 @@ By default video-edge-ai-proxy requires these ports:
 
 Make sure before your run it that these ports are available.
 
-### How to run
+If running on Mac OS X make sure to modify `/data/chrysalis` to a more Mac OS friendly folder e.g. `/Users/usename/data` under `chrysedgeserver` -> `volumes`. 
 
-video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
-- */data/chrysalis*
+Create a directory: `/data/chrysalis` or for Mac OS X: `/Users/usename/data`
 
-Create the folder if it doesn't exist and make sure it's writtable by docker process.
+Copy and paste `docker-compose.yml` to folder of your choice (recommended to be different than /data/chrysalis):
 
+```yml
+version: '3.8'
+services:
+  chrysedgeportal:
+    image: chryscloud/chrysedgeportal:0.0.4
+    depends_on:
+      - chrysedgeserver
+      - redis
+    ports:
+      - "80:80"
+    networks:
+      - chrysnet
+  chrysedgeserver:
+    image: chryscloud/chrysedgeserver:0.0.4
+    restart: always
+    depends_on:
+      - redis
+    entrypoint: /app/main
+    ports:
+      - "8080:8080"
+      - "50001:50001"
+    volumes:
+      - /data/chrysalis:/data/chrysalis
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: 
+      - chrysnet
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    # volumes:
+    #   - /data/chrysalis/redis:/data
+    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
+    # command:
+    #   - redis-server
+    #   - /usr/local/etc/redis/redis.conf
+  
+    networks: 
+      - chrysnet
 
-`Start video-edge-ai-proxy`:
+networks:
+  chrysnet:
+    name: chrysnet
+```
+
+Pull a RTSP container that video-edge-ai-proxy will run for your CCTV Network IP cameras (currently H.264 support only):
 ```bash
+docker pull chryscloud/chrysedgeproxy:0.0.2
+```
+
+Start video-edge-ai-proxy:
+```bash
+docker-compose pull
 docker-compose up -d
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
-
 
 ## Portal usage
 
@@ -238,15 +287,6 @@ Run example to turn storage off for camera `test`:
 python storage_onoff.py --device test --on false
 ```
 
-
-## Build
-
-Building from source code:
-
-```
-docker-compose build
-```
-
 # Custom configuration
 
 ## Custom redis configuration
@@ -291,10 +331,8 @@ annotation:
 buffer:
   n_memory: 1 # number of images to store in memory buffer (1 = default)
   on_disk: false # store key-frame separated mp4 file segments to disk
-  on_disk_folder: /data/chrysalis/archive
+  on_disk_folder: /data/chrysalis/archive # can be any custom folder you'd like to store video segments to
   on_disk_clean_older_than: "5m" # remove older mp4 segments than 5m
-  on_disk_schedule: "@every 5s" #https://en.wikipedia.org/wiki/Cron
-
 ```
 
 - `mode: release`: disables debug mode for http server (default: release)
@@ -313,6 +351,30 @@ buffer:
 - `on_disk_schedule`: run disk cleanup scheduler cron job [#https://en.wikipedia.org/wiki/Cron](https://en.wikipedia.org/wiki/Cron)
 
 `on_disk` creates mp4 segments in format: `"current_timestamp in ms"_"duration_in_ms".mp4`. For example: `1600685088000_2000.mp4`
+
+### Building from source
+
+```
+git clone https://github.com/chryscloud/video-edge-ai-proxy.git
+```
+
+video-edge-ai-proxy stores running processes (1 for each connected camera) into a local datastore hosted on your file system. By default the folder path used is:
+- */data/chrysalis*
+
+Create the folder if it doesn't exist and make sure it's writtable by docker process.
+
+In case you cloned this repository you can run docker-compose with build command. 
+`Start video-edge-ai-proxy` with local build:
+```bash
+docker-compose up -d
+```
+
+or 
+```
+docker-compose build
+```
+
+
 
 # RoadMap
 

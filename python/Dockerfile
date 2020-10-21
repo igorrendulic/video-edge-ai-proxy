@@ -30,7 +30,7 @@ RUN conda env create -f environment.yml
 
 RUN mkdir /proto
 COPY proto/ /proto/
-COPY rtsp_to_rtmp.py start.sh global_vars.py read_image.py archive.py /
+COPY rtsp_to_rtmp.py start.sh global_vars.py read_image.py archive.py disk_cleanup.py /
 
 RUN chmod +x /start.sh
 

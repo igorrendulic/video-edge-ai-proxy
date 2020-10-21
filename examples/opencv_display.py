@@ -40,7 +40,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # grpc connection to video-edge-ai-proxy
-    channel = grpc.insecure_channel('127.0.0.1:50001')
+    options = [('grpc.max_receive_message_length', 50 * 1024 * 1024)]
+    channel = grpc.insecure_channel('127.0.0.1:50001', options=options)
     stub = video_streaming_pb2_grpc.ImageStub(channel)
 
     print(args.keyframe)

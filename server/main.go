@@ -39,6 +39,7 @@ var (
 	grpcServer    *grpc.Server
 	grpcConn      net.Listener
 	defaultDBPath = "/data/chrysalis"
+	// defaultDBPath = "/home/igor/chrysalisedge"
 )
 
 func main() {
@@ -113,9 +114,6 @@ func main() {
 	edgeService := services.NewEdgeService()
 
 	gin.SetMode(conf.Mode)
-
-	// starting cron jobs
-	StartCronJobs(conf)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)
 	router = r.ConfigAPI(router, processService, settingsService)
