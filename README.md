@@ -38,7 +38,6 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
   * [Running opencv_display.py](#example-prerequisites)
   * [Running annotation.py](#example-prerequisites)
   * [Running storage_onoff.py](#example-prerequisites)
-* [Build](#build)
 * [Custom configuration](#custom-configuration)
   * [Custom Redis Configuration](#custom-redis-configuration)
   * [Custom Chrysalis Configuration](#custom-chrysalis-configuration)
@@ -288,15 +287,6 @@ Run example to turn storage off for camera `test`:
 python storage_onoff.py --device test --on false
 ```
 
-
-## Build
-
-Building from source code:
-
-```
-docker-compose build
-```
-
 # Custom configuration
 
 ## Custom redis configuration
@@ -377,6 +367,11 @@ In case you cloned this repository you can run docker-compose with build command
 `Start video-edge-ai-proxy` with local build:
 ```bash
 docker-compose up -d
+```
+
+or 
+```
+docker-compose build
 ```
 
 
