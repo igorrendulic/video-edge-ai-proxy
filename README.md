@@ -159,7 +159,7 @@ docker pull chryscloud/chrysedgeproxy:0.0.2
 Start video-edge-ai-proxy:
 ```bash
 docker-compose pull
-docker-compose up -d --no-build
+docker-compose up -d
 ```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
