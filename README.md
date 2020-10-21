@@ -111,7 +111,6 @@ version: '3.8'
 services:
   chrysedgeportal:
     image: chryscloud/chrysedgeportal:0.0.4
-    build: web/
     depends_on:
       - chrysedgeserver
       - redis
@@ -121,7 +120,6 @@ services:
       - chrysnet
   chrysedgeserver:
     image: chryscloud/chrysedgeserver:0.0.4
-    build: server/
     restart: always
     depends_on:
       - redis
