@@ -123,10 +123,12 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 	return sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
 }
 
+// Get settings from datastore
 func (sm *SettingsManager) Get() (*models.Settings, error) {
 	return sm.getDefault()
 }
 
+// ListDockerImages - listing local docker images based on tag name and checking if there is a newer version available
 func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrade, error) {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 	images, err := cl.ImagesList()
@@ -180,17 +182,24 @@ func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrad
 		highestLocalTagVersion = highestLocalVersion.Original()
 	}
 
+	camType := "unknown"
+	if ct, ok := models.ImageTagVersionToCameraType[nameTag]; ok {
+		camType = ct
+	}
+
 	resp := &models.ImageUpgrade{
 		HasImage:             len(localTags) > 0,
 		HasUpgrade:           hasUpgrade,
 		Name:                 nameTag,
 		HighestRemoteVersion: highestRemoteTagVersion,
 		CurrentVersion:       highestLocalTagVersion,
+		CameraType:           camType,
 	}
 
 	return resp, nil
 }
 
+// PullDockerImage - pull docker image from dockerhub
 func (sm *SettingsManager) PullDockerImage(name, version string) (*models.PullDockerResponse, error) {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 	resp, err := cl.ImagePullDockerHub(name, version, "", "")
@@ -201,6 +210,27 @@ func (sm *SettingsManager) PullDockerImage(name, version string) (*models.PullDo
 
 	fmt.Printf("%v\n", resp)
 	g.Log.Info(resp)
+	camType := "unknown"
+	if ct, ok := models.ImageTagVersionToCameraType[name]; ok {
+		camType = ct
+	}
+
+	settingTag := &models.SettingDockerTagVersion{
+		CameraType: camType,
+		Tag:        name,
+		Version:    version,
+	}
+	settingsTagBytes, err := json.Marshal(settingTag)
+	if err != nil {
+		g.Log.Error("failed to marshal settings", err)
+		return nil, err
+	}
+
+	sErr := sm.storage.Put(models.PrefixSettingsDockerTagVersions, camType, settingsTagBytes)
+	if sErr != nil {
+		g.Log.Error("failed to store latest docker tag version", sErr)
+		return nil, sErr
+	}
 
 	response := &models.PullDockerResponse{
 		Response: resp,
@@ -209,6 +239,7 @@ func (sm *SettingsManager) PullDockerImage(name, version string) (*models.PullDo
 	return response, nil
 }
 
+// findHighestVersion - finding the highest version from the list of tag:version strings
 func (sm *SettingsManager) findHighestVersion(versionsRaw []string) *version.Version {
 	if len(versionsRaw) == 0 {
 		return nil

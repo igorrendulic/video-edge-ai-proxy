@@ -52,10 +52,20 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 	if process.Name == "" || process.RTSPEndpoint == "" {
 		return errors.New("required parameters missing")
 	}
-	// default docker image (must be pulled manually for now)
-	if process.ImageTag == "" {
-		process.ImageTag = "chryscloud/chrysedgeproxy:0.0.2"
+
+	settingsTagBytes, err := pm.storage.Get(models.PrefixSettingsDockerTagVersions, "rtsp")
+	if err != nil {
+		g.Log.Error("failed to retrieve rtsp tag settings", err)
+		return err
 	}
+
+	var settingsTag models.SettingDockerTagVersion
+	err = json.Unmarshal(settingsTagBytes, &settingsTag)
+	if err != nil {
+		g.Log.Error("failed to unamrshal settings tag", err)
+		return err
+	}
+	process.ImageTag = settingsTag.Tag + ":" + settingsTag.Version
 
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 
@@ -114,7 +124,7 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 		return ccErr
 	}
 
-	err := cl.ContainerStart(process.Name)
+	err = cl.ContainerStart(process.Name)
 	if err != nil {
 		g.Log.Error("failed to start container", process.Name, err)
 		return err

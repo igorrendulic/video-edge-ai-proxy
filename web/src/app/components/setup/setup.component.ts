@@ -1,9 +1,11 @@
 import { MediaMatcher } from '@angular/cdk/layout';
+import { ThrowStmt } from '@angular/compiler';
 import { toBase64String } from '@angular/compiler/src/output/source_map';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { NotificationsService } from 'angular2-notifications';
+import { Observable, Subject } from 'rxjs';
 import { ImageUpgrade } from 'src/app/models/ImageUpgrade';
 import { GlobalVars } from 'src/app/models/RTSP';
 import { EdgeService } from 'src/app/services/edge.service';
@@ -21,8 +23,17 @@ export class SetupComponent implements OnInit, OnDestroy {
 
   loading:boolean = false;
   loadingMessage:string = "Please wait ... checking settings";
+  title:string = ""
 
   mobileQuery: MediaQueryList;
+
+  imageUpgrade = new Subject<ImageUpgrade>();
+  imageUpgrade$ = this.imageUpgrade.asObservable();
+
+  imageUpgrades:ImageUpgrade[]= [];
+
+  expectedResponses:number;
+  gotResponses:number = 0;
 
   private _mobileQueryListener: () => void;
 
@@ -40,32 +51,40 @@ export class SetupComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loading = true;
-  }
 
-  initialSetup(cameraType:string) {
-    if (GlobalVars.CameraTypeRTSP.has(cameraType)) {
-      console.log("rtsp fond");
-    } else {
-      console.log("not found");
-    }
-  }
+    const dialogRef = this.dialog.open(WaitDialogComponent, {
+      maxWidth: "400px",
+      data: {
+          title: "Please wait...",
+          message: "Checking for updates"}
+      });
 
-  checkSettings(cameraType:string) {
-     this.edgeService.getDockerImages("chryscloud/chrysedgeproxy").subscribe(data => {
-       
-       if (!data.has_image) {
-        this.pullImage(data, "Please wait...Inital setup in progress","Do not close this window until setup finishes.");
-       } else {
-         // has image, check if upgrade available
-         if (data.has_upgrade) {
-           this.loadingMessage = "Please wait ... upgrading image";
+    this.initialSetup();
 
+    this.imageUpgrade$.subscribe(data => {
+      this.gotResponses += 1;
+      this.imageUpgrades.push(data);
+      if (this.gotResponses == this.expectedResponses) {
+        // close dialog, choose which option to proceed with
+        dialogRef.close();
+
+        if (!data.has_upgrade && data.has_image) {
+
+          // no upgrades, latest version available
+          this.router.navigate(['/local/processes']);
+        } else if (!data.has_upgrade && !data.has_image) {
+
+          // no images found...initial setup
+          this.title = "Initial setup. Please choose a camera type to install";
+        } else if (data.has_image && data.has_upgrade) {
+
+          // upgrade available
+          this.title = "Upgrade available";
           const dialogRef = this.dialog.open(ConfirmDialogComponent, {
             maxWidth: "400px",
             data: {
-                title: "New version of docker image for RTSP cameras available",
-                message: "Would you like to download newer versions of RTSP camera images? Updates may contain some upgrades and/or bug fixes. Your camera operations are not affected by this process."}
+                title: "New version for RTSP cameras available " + data.highest_remote_version,
+                message: "Would you like to download newer version of RTSP camera images? Updates may contain some upgrades and/or bug fixes. Your camera operations are not affected by this process. It's just a download."}
             });
         
             // upgrade yes/no
@@ -79,18 +98,37 @@ export class SetupComponent implements OnInit, OnDestroy {
                 this.router.navigate(['/local/processes']);      
               }
             });
+        }
+      }
+    });
+  }
 
-         } else {
-           // all ok, move along
-          this.loading = false;
-          this.router.navigate(['/local/processes']);
-         }
-       }
-     }, error => {
-       console.error(error);
-       this.loadingMessage = error
-      this.loading = false;
-     })
+  clickRTSP() {
+    let rtspImage = GlobalVars.CameraTypes.get("rtsp");
+    
+    let found = false;
+    this.imageUpgrades.forEach(upgrade => {
+        if (upgrade.name == rtspImage) {
+          found = true;
+          this.pullImage(upgrade, "Downloading RTSP camera container","Please wait...");
+        }
+    });
+
+    if (!found) {
+      this.notifService.error("Failed to find camera container upgrade");
+    }
+    
+  }
+
+  initialSetup() {
+    this.expectedResponses = GlobalVars.CameraTypes.size;
+
+    GlobalVars.CameraTypes.forEach((value,key) => {
+      console.log(key,value);
+      this.edgeService.getDockerImages(value).subscribe(data => {
+        this.imageUpgrade.next(data);
+      });
+    });
   }
 
   ngOnDestroy(): void {
@@ -106,7 +144,7 @@ export class SetupComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.edgeService.pullDockerImage("chryscloud/chrysedgeproxy", data.highest_remote_version).subscribe(pullData => {
+    this.edgeService.pullDockerImage(data.name, data.highest_remote_version).subscribe(pullData => {
       this.loadingMessage = pullData.response;
       // popup  window with Next button
       this.router.navigate(['/local/processes']);     
@@ -116,7 +154,7 @@ export class SetupComponent implements OnInit, OnDestroy {
       console.error(pullErr);
       this.loadingMessage = pullErr
       this.loading = false;
-      this.openDialog("Initial setup failed", "Please execute this command in your terminal: docker pull chryscloud/chrysedgeproxy" + data.highest_remote_version + ".");
+      this.notifService.error("Please execute this command in your terminal: docker pull " + data.name +  ":" + data.highest_remote_version );
     });
 
   }
