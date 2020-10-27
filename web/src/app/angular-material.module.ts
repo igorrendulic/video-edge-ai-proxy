@@ -26,6 +26,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {MatStepperModule} from '@angular/material/stepper';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 
 
 @NgModule({
@@ -56,6 +57,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
        MatProgressBarModule,
        MatProgressSpinnerModule,
        MatExpansionModule,
+       MatCheckboxModule
     ],
     exports: [
        MatButtonModule,
@@ -81,7 +83,8 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
        MatProgressBarModule,
        MatStepperModule,
        MatProgressSpinnerModule,
-       MatExpansionModule
+       MatExpansionModule,
+       MatCheckboxModule
     ],
     providers: [
        MatDatepickerModule,

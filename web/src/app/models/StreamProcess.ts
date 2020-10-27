@@ -10,6 +10,8 @@ export interface StreamProcess {
     created?:Number
     modified?:Number
     rtmp_stream_status?:RTMPStreamStatus
+    upgrade_available?:boolean
+    newer_version?:string
 }
 
 export interface State {

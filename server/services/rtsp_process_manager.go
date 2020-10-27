@@ -25,6 +25,7 @@ import (
 	"github.com/chryscloud/go-microkit-plugins/docker"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
@@ -47,15 +48,23 @@ func NewProcessManager(storage *Storage, rdb *redis.Client) *ProcessManager {
 
 // Start - starts the docker container with rtsp, device_id and possibly rtmp environment variables.
 // Restarts always when something goes wrong within the streaming process
-func (pm *ProcessManager) Start(process *models.StreamProcess) error {
+func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *models.ImageUpgrade) error {
 
 	if process.Name == "" || process.RTSPEndpoint == "" {
 		return errors.New("required parameters missing")
 	}
 
+	if !imageUpgrade.HasImage && !imageUpgrade.HasUpgrade {
+		return errors.New("no camera container found. Please refer to documentation on how to pull a docker image manually")
+	}
+
 	settingsTagBytes, err := pm.storage.Get(models.PrefixSettingsDockerTagVersions, "rtsp")
 	if err != nil {
-		g.Log.Error("failed to retrieve rtsp tag settings", err)
+		if err == badger.ErrKeyNotFound {
+			// TODO: Check the latest version that exists on the disk and return error if none exist
+			return errors.New("Image not found. Please check the docs and pull the docker image manually.")
+		}
+		g.Log.Error("failed to read rtsp tag from settings", err)
 		return err
 	}
 
@@ -66,6 +75,26 @@ func (pm *ProcessManager) Start(process *models.StreamProcess) error {
 		return err
 	}
 	process.ImageTag = settingsTag.Tag + ":" + settingsTag.Version
+
+	// Check the latest version that exists on the disk (and if is the same as the one in settings)
+	// if is not, correct the latest version stored (most likely user chose to manually deleted the newer version)
+	if imageUpgrade.CurrentVersion != settingsTag.Version {
+		settingsTag.Version = imageUpgrade.CurrentVersion
+
+		process.ImageTag = imageUpgrade.Name + ":" + imageUpgrade.CurrentVersion
+
+		stb, mErr := json.Marshal(settingsTag)
+		if mErr != nil {
+			g.Log.Error("failed to marshal settings tag", mErr)
+			return mErr
+		}
+
+		sErr := pm.storage.Put(models.PrefixSettingsDockerTagVersions, "rtsp", stb)
+		if sErr != nil {
+			g.Log.Error("failed to store new settings tag", sErr, ", image version: ", settingsTag.Tag, settingsTag.Version)
+			return sErr
+		}
+	}
 
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 

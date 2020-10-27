@@ -110,7 +110,7 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.imageUpgrades.forEach(upgrade => {
         if (upgrade.name == rtspImage) {
           found = true;
-          this.pullImage(upgrade, "Downloading RTSP camera container","Please wait...");
+          this.pullImage(upgrade, "Downloading RTSP camera container","Please wait. This may take a few minutes.");
         }
     });
 

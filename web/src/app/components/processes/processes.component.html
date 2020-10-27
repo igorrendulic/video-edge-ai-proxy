@@ -20,17 +20,46 @@
 
 </div>
  <div *ngIf="showProcesses">
+   <div *ngIf="selection.selected.length > 0" class="table-action-buttons">
+    <button mat-raised-button color="accent" (click)="upgrade()">Upgrade Now</button>
+    &nbsp;&nbsp;
+    <a href="https://github.com/chryscloud/video-edge-ai-proxy/releases" target="_blank" mat-stroked-button color="primary">About Upgrades</a>
+   </div>
  <mat-table [dataSource]="processes" class="mat-elevation-z1">
-  <!-- User name Definition -->
+
+   <!-- Checkbox Column -->
+   <ng-container matColumnDef="select">
+    <mat-header-cell *matHeaderCellDef>
+      <mat-checkbox (change)="$event ? selectToggle() : null"
+                    [checked]="selection.hasValue() && isAllUpgradesSelected()"
+                    [indeterminate]="selection.hasValue() && !isAllUpgradesSelected()">
+      </mat-checkbox>
+    </mat-header-cell>
+    <mat-cell *matCellDef="let row">
+      <mat-checkbox (click)="$event.stopPropagation()"
+                    (change)="$event ? selection.toggle(row) : null"
+                    [checked]="selection.isSelected(row)"
+                    [disabled]="!row.upgrade_available">
+      </mat-checkbox>
+    </mat-cell>
+  </ng-container>
+
+  <!-- Container Name -->
   <ng-container matColumnDef="id">
     <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
     <mat-cell *matCellDef="let row"> {{row.name}} </mat-cell>
   </ng-container>
 
-  <!-- Age Definition -->
+  <!-- Image Name -->
   <ng-container matColumnDef="name">
     <mat-header-cell *matHeaderCellDef> Image </mat-header-cell>
     <mat-cell *matCellDef="let row"> {{row.image_tag}} </mat-cell>
+  </ng-container>
+
+  <!-- Upgrade available -->
+  <ng-container matColumnDef="newer_version">
+    <mat-header-cell *matHeaderCellDef> Upgrade available </mat-header-cell>
+    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-warn' : row.upgrade_available }"> {{row.newer_version}} </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="status">
@@ -56,8 +85,8 @@
   </ng-container>
 
   <!-- Header and Row Declarations -->
-  <mat-header-row *matHeaderRowDef="['id', 'name', 'status','created', 'modified']"></mat-header-row>
-  <mat-row *matRowDef="let row; columns: ['id', 'name', 'status', 'created','modified']" [routerLink]="['/local/process/',row.name]"></mat-row>
+  <mat-header-row *matHeaderRowDef="['select','id', 'name', 'newer_version', 'status','created', 'modified']"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: ['select', 'id', 'name', 'newer_version','status', 'created','modified']" [routerLink]="['/local/process/',row.name]"></mat-row>
   
 </mat-table>
 </div>

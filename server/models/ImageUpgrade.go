@@ -2,6 +2,7 @@ package models
 
 var (
 	ImageTagVersionToCameraType = map[string]string{"chryscloud/chrysedgeproxy": "rtsp"}
+	CameraTypeToImageTag        = map[string]string{"rtsp": "chryscloud/chrysedgeproxy"}
 )
 
 // image upgrades object (when docker image doesn't exist or has an available update)

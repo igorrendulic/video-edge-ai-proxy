@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/chryscloud/go-microkit-plugins/docker"
-	"github.com/chryscloud/microkit-plugins/dockerhub"
+	dockerhub "github.com/chryscloud/go-microkit-plugins/dockerhub"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/dgraph-io/badger/v2"

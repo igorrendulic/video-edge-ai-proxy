@@ -3,6 +3,7 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { EdgeService } from 'src/app/services/edge.service';
 import { StreamProcess } from 'src/app/models/StreamProcess';
 import { Router } from '@angular/router';
+import { NotificationsService } from 'angular2-notifications';
 
 interface DockerTag {
   value: string;
@@ -24,7 +25,7 @@ export class ProcessAddComponent implements OnInit {
   submitted:Boolean = false;
   errorMessage:string;
 
-  constructor(private _formBuilder:FormBuilder, private edgeService:EdgeService, private router:Router) {
+  constructor(private _formBuilder:FormBuilder, private edgeService:EdgeService, private router:Router, private notifService:NotificationsService) {
     this.rtspForm = this._formBuilder.group({
       name: [null, [Validators.required, Validators.minLength(4)]],
       rtsp_endpoint: [null, [Validators.required]],
@@ -57,6 +58,10 @@ export class ProcessAddComponent implements OnInit {
       this.router.navigate(['/local/processes']);
     }, error => {
       console.error(error);
+      this.notifService.error("Error", error.message, {
+        clickToClose: true,
+        clickIconToClose: true
+      })
     })
 
   }

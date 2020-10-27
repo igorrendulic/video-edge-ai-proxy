@@ -25,6 +25,7 @@
     "angular2-notifications": "^9.0.0",
     "ngx-cookie-service": "^10.0.1",
     "rxjs": "~6.5.4",
+    "semver": "^7.3.2",
     "tslib": "^1.10.0",
     "xterm": "^4.8.1",
     "zone.js": "~0.10.2"

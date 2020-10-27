@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Observable } from 'rxjs';
 import { StreamProcess } from '../models/StreamProcess';
-import { RTSP } from '../models/RTSP';
 import { Settings } from '../models/Settings';
 import { ImageUpgrade, PullDockerResponse } from '../models/ImageUpgrade';
 
@@ -44,5 +43,13 @@ export class EdgeService {
 
   pullDockerImage(tag:string,version:string) {
     return this.http.get<PullDockerResponse>(environment.LocalServerURL + "/api/v1/dockerpull?tag=" + tag + "&version=" + version);
+  }
+
+  getRTSPProcessUpgrades() {
+    return this.http.get<[StreamProcess]>(environment.LocalServerURL + "/api/v1/processupgrades");
+  }
+
+  upgradeProcessContainer(process:StreamProcess) {
+    return this.http.post<StreamProcess>(environment.LocalServerURL + "/api/v1/processupgrades", process);
   }
 }

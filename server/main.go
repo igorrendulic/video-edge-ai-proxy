@@ -184,9 +184,10 @@ func setupRedis() (*redis.Client, error) {
 	var rdb *redis.Client
 	for i := 0; i < 3; i++ {
 		rdb = redis.NewClient(&redis.Options{
-			Addr:     g.Conf.Redis.Connection,
-			Password: g.Conf.Redis.Password,
-			DB:       g.Conf.Redis.Database,
+			Addr:        g.Conf.Redis.Connection,
+			Password:    g.Conf.Redis.Password,
+			DB:          g.Conf.Redis.Database,
+			DialTimeout: time.Second * 15,
 		})
 
 		status := rdb.Ping()

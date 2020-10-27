@@ -33,15 +33,17 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 	}))
 
 	// APIs
-	processAPI := api.NewRTSPProcessHandler(processService)
+	processAPI := api.NewRTSPProcessHandler(processService, settingsService)
 	settingsAPI := api.NewSettingsHandler(settingsService)
 
 	api := router.Group("/api/v1")
 	{
-		api.POST("process", processAPI.Start)
+		api.POST("process", processAPI.StartRTSP)
 		api.DELETE("process/:name", processAPI.Stop)
 		api.GET("process/:name", processAPI.Info)
 		api.GET("processlist", processAPI.List)
+		api.GET("processupgrades", processAPI.FindRTSPUpgrades)
+		api.POST("processupgrades", processAPI.UpgradeContainer)
 		api.GET("settings", settingsAPI.Get)
 		api.POST("settings", settingsAPI.Overwrite)
 		api.GET("dockerimages", settingsAPI.DockerImagesLocally)

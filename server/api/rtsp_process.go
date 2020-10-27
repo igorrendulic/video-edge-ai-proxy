@@ -27,16 +27,18 @@ import (
 )
 
 type rtspProcessHandler struct {
-	processManager *services.ProcessManager
+	processManager  *services.ProcessManager
+	settingsManager *services.SettingsManager
 }
 
-func NewRTSPProcessHandler(processManager *services.ProcessManager) *rtspProcessHandler {
+func NewRTSPProcessHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager) *rtspProcessHandler {
 	return &rtspProcessHandler{
-		processManager: processManager,
+		processManager:  processManager,
+		settingsManager: settingsManager,
 	}
 }
 
-func (ph *rtspProcessHandler) Start(c *gin.Context) {
+func (ph *rtspProcessHandler) StartRTSP(c *gin.Context) {
 	var streamProcess models.StreamProcess
 	if err := c.ShouldBindWith(&streamProcess, binding.JSON); err != nil {
 		g.Log.Warn("missing required fields", err)
@@ -58,13 +60,55 @@ func (ph *rtspProcessHandler) Start(c *gin.Context) {
 		Streaming: true,
 	}
 
-	err := ph.processManager.Start(&streamProcess)
+	rtspImageTag := models.CameraTypeToImageTag["rtsp"]
+	currentImagesList, err := ph.settingsManager.ListDockerImages(rtspImageTag)
+	if err != nil {
+		g.Log.Error("failed to list currently available images", err)
+		AbortWithError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = ph.processManager.Start(&streamProcess, currentImagesList)
 	if err != nil {
 		g.Log.Warn("failed to start process ", deviceID, err)
 		AbortWithError(c, http.StatusConflict, err.Error())
 		return
 	}
 	c.Status(http.StatusOK)
+}
+
+// FindUpgrades - checks if each process has an upgradable version available on local disk
+func (ph *rtspProcessHandler) FindRTSPUpgrades(c *gin.Context) {
+
+	imageTag := models.CameraTypeToImageTag["rtsp"]
+
+	imageUpgrade, err := ph.settingsManager.ListDockerImages(imageTag)
+	if err != nil {
+		AbortWithError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	upgrades, err := ph.processManager.FindUpgrades(imageUpgrade)
+	if err != nil {
+		g.Log.Error("failed finding image upgrades", err)
+		AbortWithError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, upgrades)
+}
+
+// UpgradeContainer - upgrades a running container for specific process
+func (ph *rtspProcessHandler) UpgradeContainer(c *gin.Context) {
+
+	var process models.StreamProcess
+	if err := c.ShouldBindWith(&process, binding.JSON); err != nil {
+		g.Log.Warn("missing required fields", err)
+		AbortWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ph.processManager.UpgradeRunningContainer(&process)
 }
 
 func (ph *rtspProcessHandler) Stop(c *gin.Context) {
