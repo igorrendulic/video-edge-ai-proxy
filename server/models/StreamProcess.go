@@ -35,7 +35,7 @@ type StreamProcess struct {
 	Created          int64                        `json:"created,omitempty"`                // unix timestamp in ms when created
 	Modified         int64                        `json:"modified,omitempty"`               // last modificadation date, epoch in ms
 	RTMPStreamStatus *RTMPStreamStatus            `json:"rtmp_stream_status,omitempty"`     // info on if stream is being proxied and if storage set
-	UpgradeAvailable bool                         `json:"upgrade_available" default:true`   // by default no upgrade available
+	UpgradeAvailable bool                         `json:"upgrade_available,default:true"`   // by default no upgrade available
 	NewerVersion     string                       `json:"newer_version,omitempty"`          // if upgrade true the latest version available
 }
 

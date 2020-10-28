@@ -21,7 +21,7 @@
 </div>
  <div *ngIf="showProcesses">
    <div *ngIf="selection.selected.length > 0" class="table-action-buttons">
-    <button mat-raised-button color="accent" (click)="upgrade()">Upgrade Now</button>
+    <button mat-raised-button color="accent" (click)="upgrade()" [disabled]="disabledUpgradeButton">Upgrade Now</button>
     &nbsp;&nbsp;
     <a href="https://github.com/chryscloud/video-edge-ai-proxy/releases" target="_blank" mat-stroked-button color="primary">About Upgrades</a>
    </div>
@@ -59,7 +59,7 @@
   <!-- Upgrade available -->
   <ng-container matColumnDef="newer_version">
     <mat-header-cell *matHeaderCellDef> Upgrade available </mat-header-cell>
-    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-warn' : row.upgrade_available }"> {{row.newer_version}} </mat-cell>
+    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-warn' : row.upgrade_available }"> {{row.newer_version}} &nbsp; <mat-progress-bar *ngIf="row.upgrading_now" style="width: 50px;" mode="indeterminate"></mat-progress-bar> </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="status">

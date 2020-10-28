@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/adjust/rmq/v2 v2.0.0-20200523123200-98c5e969f342
-	github.com/chryscloud/go-microkit-plugins v1.0.4
+	github.com/chryscloud/go-microkit-plugins v1.0.6
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
 	github.com/docker/docker v1.13.1

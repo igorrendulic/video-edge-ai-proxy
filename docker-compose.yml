@@ -21,7 +21,7 @@ services:
       - "8080:8080"
       - "50001:50001"
     volumes:
-      - /home/igor/chrysalisedge:/data/chrysalis
+      - /data/chrysalis:/data/chrysalis
       - /var/run/docker.sock:/var/run/docker.sock
     networks: 
       - chrysnet

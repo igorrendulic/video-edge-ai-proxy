@@ -21,10 +21,17 @@ export class ProcessesComponent implements OnInit {
 
   selection = new SelectionModel<StreamProcess>(true, []);
 
+  upgrading:[] = [];
+  disabledUpgradeButton:boolean = false;
+
   constructor(private edgeService:EdgeService, private notifService:NotificationsService) {}
 
   ngOnInit(): void {
     this.loadProcesses();
+    this.getUpgradableProcesses();
+  }
+
+  getUpgradableProcesses() {
     this.edgeService.getRTSPProcessUpgrades().subscribe(data => {
       console.log(data);
       if (data.length > 0) {
@@ -53,16 +60,51 @@ export class ProcessesComponent implements OnInit {
   }
 
   upgrade() {
+    this.disabledUpgradeButton = true;
+    let allUpgradesNumber = this.selection.selected.length;
+    let upgradedSoFar = 0;
     if (this.selection.selected.length > 0) {
       this.selection.selected.forEach(process => {
+
+        // set all to upgrading status
+        this.processes.forEach(listedProcess => {
+          if (listedProcess.name == process.name) {
+            listedProcess.upgrading_now = true;
+          }
+        });
+
+        // start upgrde process for each selected process
         this.edgeService.upgradeProcessContainer(process).subscribe(data => {
-          console.log("upgrade success: ", data);
+          console.log("upgrade success: ", data, process);
+
+          this.processes.forEach(listedProcess => {
+            if (listedProcess.name == data.name) {
+              listedProcess.upgrading_now = false;
+            }
+          });
+
+          upgradedSoFar += 1;
+          console.log("upgraded so far", upgradedSoFar, allUpgradesNumber);
+          if (allUpgradesNumber == upgradedSoFar) {
+            this.selection.clear();
+            this.getUpgradableProcesses();
+            this.disabledUpgradeButton = false;
+          }
+        
+        // set to up
+          
         }, error => {
+          upgradedSoFar += 1;
           console.error("failed to upgrade container", error);
           this.notifService.error("Error", "Failed to upgrade container: " + error.message, {
             clickToClose: true,
             clickIconToClose: true
           });
+          if (allUpgradesNumber == upgradedSoFar) {
+            this.selection.clear();
+            this.getUpgradableProcesses();
+            this.disabledUpgradeButton = false;
+          }
         })
       });
     }

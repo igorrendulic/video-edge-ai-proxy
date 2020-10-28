@@ -18,6 +18,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"net/http"
+	"strings"
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
@@ -108,7 +109,25 @@ func (ph *rtspProcessHandler) UpgradeContainer(c *gin.Context) {
 		return
 	}
 
-	ph.processManager.UpgradeRunningContainer(&process)
+	if process.ImageTag == "" {
+		AbortWithError(c, http.StatusBadRequest, "imagetag is empty on StreamProcess")
+		return
+	}
+
+	splitted := strings.Split(process.ImageTag, ":")
+	if len(splitted) != 2 {
+		AbortWithError(c, http.StatusBadRequest, "invalid image. tag (verion) required")
+		return
+	}
+	baseTag := splitted[0]
+
+	newProc, err := ph.processManager.UpgradeRunningContainer(&process, baseTag+":"+process.NewerVersion)
+	if err != nil {
+		g.Log.Error("failed to upgrade running container", process.Name, process.ImageTag)
+		AbortWithError(c, http.StatusConflict, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, newProc)
 }
 
 func (ph *rtspProcessHandler) Stop(c *gin.Context) {

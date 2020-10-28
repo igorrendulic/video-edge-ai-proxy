@@ -12,6 +12,7 @@ export interface StreamProcess {
     rtmp_stream_status?:RTMPStreamStatus
     upgrade_available?:boolean
     newer_version?:string
+    upgrading_now?:boolean
 }
 
 export interface State {
