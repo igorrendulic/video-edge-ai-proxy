@@ -2,9 +2,9 @@ name: chrysedgeexamples
 channels:
   - conda-forge
 dependencies:
-  - python=3.7.7=hcf32534_0_cpython
+  - python=3.7.7
   - numpy=1.18.1
-  - pip=20.0.2=py37_1
+  - pip=20.0.2
   - opencv=4.4.0
   - pip:
     - grpcio
