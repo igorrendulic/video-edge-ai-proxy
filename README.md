@@ -109,7 +109,7 @@ Copy and paste `docker-compose.yml` to folder of your choice (recommended to be 
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.4
+    image: chryscloud/chrysedgeportal:0.0.5
     depends_on:
       - chrysedgeserver
       - redis
@@ -118,7 +118,7 @@ services:
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.4
+    image: chryscloud/chrysedgeserver:0.0.5
     restart: always
     depends_on:
       - redis
@@ -150,16 +150,13 @@ networks:
     name: chrysnet
 ```
 
-Pull a RTSP container that video-edge-ai-proxy will run for your CCTV Network IP cameras (currently H.264 support only):
-```bash
-docker pull chryscloud/chrysedgeproxy:0.0.2
-```
-
 Start video-edge-ai-proxy:
 ```bash
 docker-compose pull
 docker-compose up -d --no-build
 ```
+
+(Currently H.264 support only)
 
 Open browser and visit `chrysalisportal` at address: `http://localhost`
 
