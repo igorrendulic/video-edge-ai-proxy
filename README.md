@@ -48,14 +48,11 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 - [Docker](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-Pull `rtsp_to_rtmp` docker image from dockerhub to your local computer:
-```bash
-docker pull chryscloud/chrysedgeproxy:0.0.2
-```
-
 #### Enable docker TCP socket connection
 
-`This settings are not required if you running on Mac OS X. Only make sure that docker-compose and docker are updated to the latest versions`.
+***Linux based systems only***
+
+`This settings are not required if you running on Mac OS X and Windows. Only make sure that docker-compose and docker are updated to the latest versions`.
 
 Create `daemon.json` file in `/etc/docker` folder with JSON contents:
 ```json
@@ -99,7 +96,11 @@ By default video-edge-ai-proxy requires these ports:
 
 Make sure before your run it that these ports are available.
 
-If running on Mac OS X make sure to modify `/data/chrysalis` to a more Mac OS friendly folder e.g. `/Users/usename/data` under `chrysedgeserver` -> `volumes`. 
+For **Mac OS X and Windows 10** update your Docker desktop to latest version.
+
+If running on **Mac OS X** make sure to modify `/data/chrysalis` to a more Mac OS friendly folder e.g. `/Users/usename/data` under `chrysedgeserver` -> `volumes`. 
+
+If running on **Windows 10** make sure to modify `/data/chrysalis` to your custom windows folder to e.g. `c:/Users/user/chrys-video-egde-proxy/data` under `chrysedgeserver` -> `volumes`. Create the folder first. On Windows latest Docker Desktop version must have  `WSL integration` enabled in settings. 
 
 Create a directory: `/data/chrysalis` or for Mac OS X: `/Users/usename/data`
 
@@ -163,6 +164,8 @@ Open browser and visit `chrysalisportal` at address: `http://localhost:8905`
 ## Portal usage
 
 Open your browser and go to: `http://localhost:8905`
+
+On the first visit Edge Proxy will display a RTSP docker container icon. Click on it. This will initiate the pull for the latest version of the docker container pre-compiled to be used with RTSP enabled cameras. 
 
 Connecting RTSP camera
 
@@ -301,6 +304,8 @@ Default configuration is in the root folder of this project: `./redis.conf`
     #   - /usr/local/etc/redis/redis.conf
 ```
 
+Modify folders accordingly for **Mac OS X and Windows**
+
 ## Custom Chrysalis configuration
 
 Create `conf.yaml` file in `/data/chrysalis` folder. The configuration file is automatically picked up if it exists otherwise system fallbacks to it's default configuration.
@@ -348,6 +353,13 @@ buffer:
 - `on_disk_schedule`: run disk cleanup scheduler cron job [#https://en.wikipedia.org/wiki/Cron](https://en.wikipedia.org/wiki/Cron)
 
 `on_disk` creates mp4 segments in format: `"current_timestamp in ms"_"duration_in_ms".mp4`. For example: `1600685088000_2000.mp4`
+
+If running on **Mac OS X** modify `on_disk_folder` to your custom one. 
+
+If running on **Windows 10** modify `on_disk_folder` by prefixing `/C/`. Example:
+```
+on_disk_folder:  /C/Users/user/chrys-video-egde-proxy/videos
+```
 
 ### Building from source
 
