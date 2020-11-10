@@ -105,6 +105,7 @@ export class SetupComponent implements OnInit, OnDestroy {
 
   clickRTSP() {
     let rtspImage = GlobalVars.CameraTypes.get("rtsp");
+    console.log("rtspImage from global vars: ", rtspImage);
     
     let found = false;
     this.imageUpgrades.forEach(upgrade => {
@@ -113,11 +114,11 @@ export class SetupComponent implements OnInit, OnDestroy {
           this.pullImage(upgrade, "Downloading RTSP camera container","Please wait. This may take a few minutes.");
         }
     });
-
-    if (!found) {
-      this.notifService.error("Failed to find camera container upgrade");
-    }
     
+    if (!found) {
+      console.error("failed to find a docker image when doing continer upgrade", rtspImage, GlobalVars.CameraTypes);
+      this.notifService.error("Failed to find the right container image. Try hard refreshing url http://localhost:7021");
+    }
   }
 
   initialSetup() {

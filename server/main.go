@@ -53,7 +53,7 @@ func main() {
 		// config file does not exist
 		conf = g.Config{
 			YamlConfig: cfg.YamlConfig{
-				Port: 8080,
+				Port: 8909,
 				Mode: gin.ReleaseMode,
 			},
 		}
@@ -80,7 +80,7 @@ func main() {
 	} else {
 		// custom config file exists
 		err := cfg.NewYamlConfig(defaultDBPath+"/conf.yaml", &conf)
-		conf.Port = 8080 // override port, if changed in config
+		conf.Port = 8909 // override port, if changed in config
 		if err != nil {
 			g.Log.Error(err, "conf.yaml failed to load")
 			panic("Failed to load conf.yaml")

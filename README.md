@@ -92,8 +92,8 @@ curl -s --unix-socket /var/run/docker.sock http://dummy/images/json | jq '.'
 ## Quick Start
 
 By default video-edge-ai-proxy requires these ports:
-- *80* for web portal
-- *8080* for RESTful API (portal API)
+- *8905* for web portal
+- *8909* for RESTful API (portal API)
 - *50001* for client grpc connection
 - *6379* for redis
 
@@ -158,11 +158,11 @@ docker-compose up -d --no-build
 
 (Currently H.264 support only)
 
-Open browser and visit `chrysalisportal` at address: `http://localhost`
+Open browser and visit `chrysalisportal` at address: `http://localhost:8905`
 
 ## Portal usage
 
-Open your browser and go to: `http://localhost`
+Open your browser and go to: `http://localhost:8905`
 
 Connecting RTSP camera
 
