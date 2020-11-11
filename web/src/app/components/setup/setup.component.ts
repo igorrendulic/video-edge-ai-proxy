@@ -117,7 +117,7 @@ export class SetupComponent implements OnInit, OnDestroy {
     
     if (!found) {
       console.error("failed to find a docker image when doing continer upgrade", rtspImage, GlobalVars.CameraTypes);
-      this.notifService.error("Failed to find the right container image. Try hard refreshing url http://localhost:7021");
+      this.notifService.error("Failed to find the right container image. Try hard refreshing.");
     }
   }
 

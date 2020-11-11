@@ -61,11 +61,32 @@ func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *mod
 	settingsTagBytes, err := pm.storage.Get(models.PrefixSettingsDockerTagVersions, "rtsp")
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
-			// TODO: Check the latest version that exists on the disk and return error if none exist
-			return errors.New("Image not found. Please check the docs and pull the docker image manually.")
+
+			// if no docker tag version stored in database but image does exist on disk, then store settings docker tag version with that image
+			tag := models.CameraTypeToImageTag["rtsp"]
+			if imageUpgrade == nil {
+				return errors.New("Image not found. Please check the docs and pull the docker image manually.")
+			}
+			maximumExistingTag := tag + ":" + imageUpgrade.CurrentVersion
+			// store to database
+			g.Log.Info("maximum existing tag od disk found: ", maximumExistingTag)
+
+			settingsTagVersion := &models.SettingDockerTagVersion{
+				CameraType: "rtsp",
+				Tag:        tag,
+				Version:    imageUpgrade.CurrentVersion,
+			}
+			stb, sErr := pm.storeSettingsTagVersion(settingsTagVersion)
+			if sErr != nil {
+				g.Log.Error("failed to store new settings tag version ", sErr)
+				return sErr
+			}
+
+			settingsTagBytes = stb
+		} else {
+			g.Log.Error("failed to read rtsp tag from settings", err)
+			return err
 		}
-		g.Log.Error("failed to read rtsp tag from settings", err)
-		return err
 	}
 
 	var settingsTag models.SettingDockerTagVersion
@@ -83,13 +104,7 @@ func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *mod
 
 		process.ImageTag = imageUpgrade.Name + ":" + imageUpgrade.CurrentVersion
 
-		stb, mErr := json.Marshal(settingsTag)
-		if mErr != nil {
-			g.Log.Error("failed to marshal settings tag", mErr)
-			return mErr
-		}
-
-		sErr := pm.storage.Put(models.PrefixSettingsDockerTagVersions, "rtsp", stb)
+		_, sErr := pm.storeSettingsTagVersion(&settingsTag)
 		if sErr != nil {
 			g.Log.Error("failed to store new settings tag", sErr, ", image version: ", settingsTag.Tag, settingsTag.Version)
 			return sErr
@@ -139,6 +154,13 @@ func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *mod
 	if g.Conf.Buffer.OnDisk {
 		envVars = append(envVars, "disk_buffer_path="+g.Conf.Buffer.OnDiskFolder)
 		envVars = append(envVars, "disk_cleanup_rate="+g.Conf.Buffer.OnDiskCleanupOlderThan)
+	}
+	if g.Conf.Redis.Connection != "" {
+		host := strings.Split(g.Conf.Redis.Connection, ":")
+		if len(host) == 2 {
+			envVars = append(envVars, "redis_host="+host[0])
+			envVars = append(envVars, "redis_port="+host[1])
+		}
 	}
 
 	envVars = append(envVars, "PYTHONUNBUFFERED=0")
@@ -398,4 +420,20 @@ func (pm *ProcessManager) UpdateProcessInfo(stream *models.StreamProcess) (*mode
 	// TODO: add to redis
 
 	return stream, nil
+}
+
+// stores settings tag version and returns bytes
+func (pm *ProcessManager) storeSettingsTagVersion(settingsTagVersion *models.SettingDockerTagVersion) ([]byte, error) {
+	stb, mErr := json.Marshal(settingsTagVersion)
+	if mErr != nil {
+		g.Log.Error("failed to marshal new settings tag version", mErr)
+		return nil, mErr
+	}
+
+	pErr := pm.storage.Put(models.PrefixSettingsDockerTagVersions, "rtsp", stb)
+	if pErr != nil {
+		g.Log.Error("Failed to store settings tag version to db", pErr)
+		return nil, pErr
+	}
+	return stb, nil
 }

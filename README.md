@@ -110,22 +110,22 @@ Copy and paste `docker-compose.yml` to folder of your choice (recommended to be 
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.5
+    image: chryscloud/chrysedgeportal:0.0.6
     depends_on:
       - chrysedgeserver
       - redis
     ports:
-      - "80:80"
+      - "8905:8905"
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.5
+    image: chryscloud/chrysedgeserver:0.0.6
     restart: always
     depends_on:
       - redis
     entrypoint: /app/main
     ports:
-      - "8080:8080"
+      - "8909:8909"
       - "50001:50001"
     volumes:
       - /data/chrysalis:/data/chrysalis
@@ -382,8 +382,6 @@ or
 ```
 docker-compose build
 ```
-
-
 
 # RoadMap
 

@@ -11,6 +11,8 @@ rtmp_endpoint=${rtmp_endpoint}
 in_memory_buffer=${in_memory_buffer}
 disk_buffer_path=${disk_buffer_path}
 disk_cleanup_rate=${disk_cleanup_rate}
+redis_host=${redis_host}
+redis_port=${redis_port}
 
  if [ -z "$rtsp_endpoint" ]; then 
     echo "rtsp endpoint must be defined in environment variables"
@@ -37,6 +39,12 @@ if [ ! -z "$disk_buffer_path" ]; then
 fi
 if [ ! -z "$disk_cleanup_rate" ]; then
     cmd="$cmd --disk_cleanup_rate $disk_cleanup_rate"
+fi
+if [ ! -z "$redis_host" ]; then
+    cmd="$cmd --redis_host $redis_host"
+fi
+if [ ! -z "$redis_port" ]; then
+    cmd="$cmd --redis_port $redis_port"
 fi
 
 echo "running: $cmd"

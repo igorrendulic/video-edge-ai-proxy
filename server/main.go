@@ -109,8 +109,8 @@ func main() {
 	storage := services.NewStorage(db)
 
 	// Services
-	processService := services.NewProcessManager(storage, rdb)
 	settingsService := services.NewSettingsManager(storage)
+	processService := services.NewProcessManager(storage, rdb)
 	edgeService := services.NewEdgeService()
 
 	gin.SetMode(conf.Mode)

@@ -197,6 +197,8 @@ if __name__ == "__main__":
     parser.add_argument("--memory_buffer", type=int, default=1, required=False)
     parser.add_argument("--disk_path", type=str, default=None, required=False)
     parser.add_argument("--disk_cleanup_rate", type=str, default=None, required=False)
+    parser.add_argument("--redis_host", type=str, default=None, required=False)
+    parser.add_argument("--redis_port", type=str, default=None, required=False)
 
     args = parser.parse_args()
 
@@ -206,6 +208,8 @@ if __name__ == "__main__":
     memory_buffer=args.memory_buffer
     disk_path=args.disk_path
     disk_cleanup_rate=args.disk_cleanup_rate
+    redis_host = args.redis_host
+    redis_port = args.redis_port
 
     decode_packet = threading.Event()
     lock_condition = threading.Condition()
@@ -215,10 +219,19 @@ if __name__ == "__main__":
     print("Device ID: ", device_id)
     print("memory buffer: ", memory_buffer)
     print("disk path: ", disk_path)
+    print("redis host: ", redis_host)
+    print("redis port: ", redis_port)
 
     redis_conn = None
     try:
-        pool = redis.ConnectionPool(host="redis", port="6379")
+        if redis_host:
+            if not redis_port:
+                redis_port = "6379"
+            
+            print("connecting to custom redis host: ", redis_host, redis_port)
+            pool = redis.ConnectionPool(host=redis_host, port=redis_port)
+        else:
+            pool = redis.ConnectionPool(host="redis", port="6379")
         # pool = redis.ConnectionPool(host="localhost", port="6379")
         redis_conn = redis.Redis(connection_pool=pool)
     except Exception as ex:
