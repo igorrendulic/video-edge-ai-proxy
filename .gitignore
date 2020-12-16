@@ -201,3 +201,4 @@ web/typings
 # System Files
 .DS_Store
 web/Thumbs.db
+examples/yolov3-coco/yolov3.weights

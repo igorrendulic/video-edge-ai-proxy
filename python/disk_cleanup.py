@@ -41,7 +41,7 @@ class CleanupScheduler(threading.Thread):
                             if os.path.exists(rm_filename):
                                 os.remove(rm_filename)
                             
-            print("numer of listed files: ", str(len(files)))
+            # print("numer of listed files: ", str(len(files)))
 
         except Exception as e:
             print("failed delete files", e)

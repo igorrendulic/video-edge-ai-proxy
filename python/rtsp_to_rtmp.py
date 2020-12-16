@@ -66,7 +66,9 @@ class RTSPtoRTMP(threading.Thread):
                 self.in_video_stream = self.in_container.streams.video[0]
                 self.in_audio_stream = None
                 if len(self.in_container.streams.audio) > 0:
-                    self.in_audio_stream = self.in_container.streams.audio[0]
+                    for c in self.in_container.streams.audio:
+                        print(c)
+                    # self.in_audio_stream = self.in_container.streams.audio[0]
 
                 # init mp4 local archive
                 if self._disk_path is not None:

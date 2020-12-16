@@ -72,11 +72,19 @@ class StoreMP4VideoChunks(threading.Thread):
         segment_length = int(segment_length * 1000) # convert to milliseconds
         # print(segment_length)
 
+        # from datetime import datetime
+        # value = datetime.fromtimestamp(int(start_timestamp/1000))
+        # print("current timestamp: ", datetime.now(), "segment_start: ", value)
+        # now = int(time.time() * 1000)
+        # diff = now - (start_timestamp + segment_length)
+        # print("filename, currentime diff: ", diff)
+
         output_file_name = self.path + "/" + str(start_timestamp) + "_" + str(segment_length) + ".mp4"
         output = av.open(output_file_name, format="mp4", mode='w')
         output_video_stream = output.add_stream(template=self.in_video_stream) 
         if self.in_audio_stream:
-            output_audio_stream = output.add_stream(template=self.in_audio_stream) 
+            print(self.in_audio_stream)
+            # output_audio_stream = output.add_stream(template=self.in_audio_stream) 
 
         for _,p in enumerate(packet_store):
             p.dts -= minimum_dts
@@ -92,9 +100,18 @@ class StoreMP4VideoChunks(threading.Thread):
                 except:
                     print("dts invalid probably")
                     continue
-            if (p.stream.type == "audio") and self.in_audio_stream:
-                p.stream = output_audio_stream
-                output.mux(p)
+            # if (p.stream.type == "audio") and self.in_audio_stream:
+            #     p.stream = output_audio_stream
+            #     output.mux(p)
             # print ("POST ", p, p.dts, p.pts, p.stream.type)
 
         output.close()
+
+        ### INternal test
+        import pathlib
+        fp = pathlib.Path(output_file_name)
+        created_timestamp = int(fp.stat().st_ctime * 1000)
+
+        print("timestamp: ", str(start_timestamp), "\t created at: ", created_timestamp, "\t diff: ", start_timestamp - created_timestamp)
+        if created_timestamp < start_timestamp:
+            print("BUG BUG BUG!")

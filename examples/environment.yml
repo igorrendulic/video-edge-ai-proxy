@@ -1,6 +1,7 @@
 name: chrysedgeexamples
 channels:
   - conda-forge
+  - peper0
 dependencies:
   - python=3.7.7
   - numpy=1.18.1
@@ -9,3 +10,4 @@ dependencies:
   - pip:
     - grpcio
     - grpcio-tools
+    - imutils
