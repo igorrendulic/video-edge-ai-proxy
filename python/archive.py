@@ -17,6 +17,7 @@ import time
 import threading, queue
 import os
 import datetime
+from random import randint
 
 class StoreMP4VideoChunks(threading.Thread):
 
@@ -70,14 +71,6 @@ class StoreMP4VideoChunks(threading.Thread):
             segment_length = (maximum_dts - minimum_dts) * time_base
 
         segment_length = int(segment_length * 1000) # convert to milliseconds
-        # print(segment_length)
-
-        # from datetime import datetime
-        # value = datetime.fromtimestamp(int(start_timestamp/1000))
-        # print("current timestamp: ", datetime.now(), "segment_start: ", value)
-        # now = int(time.time() * 1000)
-        # diff = now - (start_timestamp + segment_length)
-        # print("filename, currentime diff: ", diff)
 
         output_file_name = self.path + "/" + str(start_timestamp) + "_" + str(segment_length) + ".mp4"
         output = av.open(output_file_name, format="mp4", mode='w')
@@ -94,6 +87,9 @@ class StoreMP4VideoChunks(threading.Thread):
         for _,p in enumerate(packet_store):
             # print ("PRE ", p, p.dts, p.pts, p.stream.type)
             if (p.stream.type == "video"):
+                if p.dts is None:
+                    continue
+
                 p.stream = output_video_stream
                 try:
                     output.mux(p)            
@@ -105,13 +101,18 @@ class StoreMP4VideoChunks(threading.Thread):
             #     output.mux(p)
             # print ("POST ", p, p.dts, p.pts, p.stream.type)
 
+
+        
         output.close()
 
         ### INternal test
         import pathlib
         fp = pathlib.Path(output_file_name)
         created_timestamp = int(fp.stat().st_ctime * 1000)
+        create_human_timestamp = datetime.datetime.fromtimestamp(created_timestamp//1000)
 
-        print("timestamp: ", str(start_timestamp), "\t created at: ", created_timestamp, "\t diff: ", start_timestamp - created_timestamp)
-        if created_timestamp < start_timestamp:
-            print("BUG BUG BUG!")
+        filename_human = datetime.datetime.fromtimestamp(start_timestamp//1000)
+        print("mp4 TS: ", start_timestamp,"created TS: ", created_timestamp, "mp4 human TS: ", filename_human.strftime('%Y-%m-%d %H:%M:%S'), "created human TS: ", create_human_timestamp.strftime('%Y-%m-%d %H:%M:%S'), "File Size: ", fp.stat().st_size)
+
+        if created_timestamp <= start_timestamp:
+            print("BUG BUG BUG! ------------> created timestamp should always be ahead")

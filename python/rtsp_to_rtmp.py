@@ -27,6 +27,7 @@ import sys
 from archive import StoreMP4VideoChunks
 from disk_cleanup import CleanupScheduler
 from global_vars import query_timestamp, RedisIsKeyFrameOnlyPrefix, RedisLastAccessPrefix, ArchivePacketGroup
+import datetime
 
 
 class RTSPtoRTMP(threading.Thread):
@@ -57,7 +58,11 @@ class RTSPtoRTMP(threading.Thread):
         iframe_start_timestamp = 0
         packet_group_queue = queue.Queue()
 
+        apg:ArchivePacketGroup = None
+
         should_mux = False
+
+        last_loop_run = int(time.time() * 1000)
 
         while True:
             try:
@@ -100,66 +105,99 @@ class RTSPtoRTMP(threading.Thread):
                 if packet.is_keyframe:
                     # if we already found a keyframe previously, archive what we have
 
-                    if len(current_packet_group) > 0:
-                        packet_group = current_packet_group.copy()
+                    if apg is not None:
+                        # packet_group = current_packet_group.copy()
                         
                         # send to archiver! (packet_group, iframe_start_timestamp)
-                        if self._disk_path is not None:
-                            apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
-                            packet_group_queue.put(apg)
+                        if self._disk_path is not None and apg is not None:
+                            # apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
+                            # apg.setPacketGroup(packet_group)
+
+                            if len(apg.packet_group) > 0:
+                                packet_group_queue.put(apg)
+
+
+                            if apg.start_timestamp != iframe_start_timestamp:
+                                print("this was the problem with TS -------------->: ", apg.start_timestamp, iframe_start_timestamp)
+                            
+                            filename_human = datetime.datetime.fromtimestamp(apg.start_timestamp//1000)
+                            print("ArchivePacketGroup GOP size: ", len(apg.packet_group), "file TS: ", apg.start_timestamp, "file human TS: ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
+                            print("Queue size: ", packet_group_queue.qsize(), "GOP size: ", len(apg.packet_group))
 
                     keyframe_found = True
                     current_packet_group = []
                     iframe_start_timestamp = int(round(time.time() * 1000))
+                    apg = ArchivePacketGroup(iframe_start_timestamp)
+
+                    # debugging
+                    filename_human = datetime.datetime.fromtimestamp(iframe_start_timestamp/1000)
+                    current_ts = int(time.time() * 1000)
+                    cts_human = datetime.datetime.fromtimestamp(current_ts/1000)
+                    print("next file TS: ", iframe_start_timestamp, "next file TS (human): ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'), "current: ", current_ts, "current human: ", cts_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
 
                 if keyframe_found == False:
                     print("skipping, since not a keyframe")
                     continue
+
+                '''
+                Live Redis Settings
+                -------------------
+                This should be invoked only every 500 ms, This If needs to moved to it's own method
+                '''
                 
-                # shouldn't be a problem for redis but maybe every 200ms to query for latest timestamp only
-                settings_dict = self.redis_conn.hgetall(RedisLastAccessPrefix + device_id)
+                this_loop_run = int(time.time() * 1000)
 
-                if settings_dict is not None and len(settings_dict) > 0:
-                    settings_dict = { y.decode('utf-8'): settings_dict.get(y).decode('utf-8') for y in settings_dict.keys() } 
-                    if "last_query" in settings_dict:
-                        ts = settings_dict['last_query']
-                    else:
-                        continue
-                    
-                    # check if stream should be forwarded to Chrysalis Cloud RTMP
-                    if "proxy_rtmp" in settings_dict:
-                        should_mux_string = settings_dict['proxy_rtmp']
-                        previous_should_mux = should_mux
-                        if should_mux_string == "1":
-                            should_mux = True
-                        else:
-                            should_mux = False
-                    
-                        # check if it's time for flushing of current_packet_group 
-                        if should_mux != previous_should_mux and should_mux == True:
-                            flush_current_packet_group = True
-                        else:
-                            flush_current_packet_group = False
-                    
-                    ts = int(ts)
-                    ts_now = int(round(time.time() * 1000))
-                    diff = ts_now - ts
-                    # if no request in 10 seconds, stop
-                    if diff < 10000:
-                        try:
-                            self.lock_condition.acquire()
-                            query_timestamp = ts
-                            self.lock_condition.notify_all()
-                        finally:
-                            self.lock_condition.release() 
+                # store settings to Redis only every 500ms
+                if this_loop_run - last_loop_run > 500:
 
-                        self.is_decode_packets_event.set()
+                    settings_dict = self.redis_conn.hgetall(RedisLastAccessPrefix + device_id)
+
+                    if settings_dict is not None and len(settings_dict) > 0:
+
+                        settings_dict = { y.decode('utf-8'): settings_dict.get(y).decode('utf-8') for y in settings_dict.keys() } 
+                        if "last_query" in settings_dict:
+                            ts = settings_dict['last_query']
+                        else:
+                            continue
+                        
+                        # check if stream should be forwarded to Chrysalis Cloud RTMP
+                        if "proxy_rtmp" in settings_dict:
+                            should_mux_string = settings_dict['proxy_rtmp']
+                            previous_should_mux = should_mux
+                            if should_mux_string == "1":
+                                should_mux = True
+                            else:
+                                should_mux = False
+                        
+                            # check if it's time for flushing of current_packet_group 
+                            if should_mux != previous_should_mux and should_mux == True:
+                                flush_current_packet_group = True
+                            else:
+                                flush_current_packet_group = False
+                        
+                        ts = int(ts)
+                        ts_now = int(round(time.time() * 1000))
+                        diff = ts_now - ts
+                        # if no request in 10 seconds, stop
+                        if diff < 10000:
+                            try:
+                                self.lock_condition.acquire()
+                                query_timestamp = ts
+                                self.lock_condition.notify_all()
+                            finally:
+                                self.lock_condition.release() 
+
+                            self.is_decode_packets_event.set()
+
+                    last_loop_run = int(time.time() * 1000)
 
                 if packet.is_keyframe:
                     self.is_decode_packets_event.clear()
                     self._packet_queue.queue.clear()
                 
-                
+                # adding packets to APG
+                if apg is not None:
+                    apg.addPacket(packet)
                 self._packet_queue.put(packet)
 
                 try:

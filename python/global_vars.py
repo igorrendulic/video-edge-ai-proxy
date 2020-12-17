@@ -18,6 +18,15 @@ RedisIsKeyFrameOnlyPrefix = "is_key_frame_only_"
 
 class ArchivePacketGroup():
 
-    def __init__(self, packet_group, start_timestamp):
-        self.packet_group = packet_group
+    def __init__(self, start_timestamp):
+        self.packet_group = []
         self.start_timestamp = start_timestamp
+
+    def addPacket(self, packet=None):
+        self.packet_group.append(packet)
+
+    def setPacketGroup(self, packet_group=[]):
+        self.packet_group = packet_group
+
+    def setStartTimestamp(self, timestamp=None):
+        self.start_timestamp = timestamp

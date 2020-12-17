@@ -28,7 +28,7 @@ class CleanupScheduler(threading.Thread):
             now = int(time.time() * 1000)
             remove_older_than = now - (self.__delay_seconds * 1000)
 
-            print("removing older mp4 files", self.__folder + "/" + self.__device, datetime.utcfromtimestamp(remove_older_than/1000).strftime('%Y-%m-%d %H:%M:%S'))
+            # print("removing older mp4 files", self.__folder + "/" + self.__device, datetime.utcfromtimestamp(remove_older_than/1000).strftime('%Y-%m-%d %H:%M:%S'))
             files = os.listdir(self.__folder + "/" + self.__device)
 
             if len(files) > 0:
