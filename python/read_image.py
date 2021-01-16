@@ -115,7 +115,7 @@ class ReadImage(threading.Thread):
 
                                     vfData = vf.SerializeToString()
 
-                                    self.redis_conn.xadd(self.device_id, {'data': vfData}, maxlen=self._memory_buffer)
+                                    self.redis_conn.xadd(self.device_id, {'data': vfData}, maxlen=1)
 
                                     if decode_only_keyframes:
                                         break

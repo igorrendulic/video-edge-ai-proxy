@@ -36,10 +36,10 @@ import (
 )
 
 var (
-	grpcServer    *grpc.Server
-	grpcConn      net.Listener
-	defaultDBPath = "/data/chrysalis"
-	// defaultDBPath = "/home/igor/chrysalisedge"
+	grpcServer *grpc.Server
+	grpcConn   net.Listener
+	// defaultDBPath = "/data/chrysalis"
+	defaultDBPath = "/home/igor/Downloads"
 )
 
 func main() {

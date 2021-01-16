@@ -16,6 +16,14 @@ query_timestamp = None
 RedisLastAccessPrefix = "last_access_time_"
 RedisIsKeyFrameOnlyPrefix = "is_key_frame_only_"
 
+# in memory constants
+RedisInMemoryBufferChannel = "memory_buffer_channel"
+RedisInMemoryQueuePrefix = "in_memory_queue_" # stored compressed video stream packet by packet
+RedisInMemoryDecodedImagesPrefix = "memory_decoded_" # decoded video stream from in_memory_queue
+RedisInMemoryIFrameListPrefix = "memory_iframe_list_" # helper list of all iframes for finding the closest i-frame faster
+
+RedisCodecVideoInfo = "codec_video_info"
+
 class ArchivePacketGroup():
 
     def __init__(self, start_timestamp):

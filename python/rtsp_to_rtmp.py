@@ -26,13 +26,14 @@ from argparse import ArgumentParser
 import sys
 from archive import StoreMP4VideoChunks
 from disk_cleanup import CleanupScheduler
+from inmemory_buffer import InMemoryBuffer, packetToInMemoryBuffer, setCodecInfo,getCodecInfo, memoryCleanup
 from global_vars import query_timestamp, RedisIsKeyFrameOnlyPrefix, RedisLastAccessPrefix, ArchivePacketGroup
 import datetime
 
 
 class RTSPtoRTMP(threading.Thread):
 
-    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, disk_path, redis_conn, is_decode_packets_event, lock_condition):
+    def __init__(self, rtsp_endpoint, rtmp_endpoint, packet_queue, device_id, disk_path, redis_conn, memory_buffer, is_decode_packets_event, lock_condition):
         threading.Thread.__init__(self) 
         self._packet_queue = packet_queue
         self._disk_path = disk_path
@@ -40,6 +41,7 @@ class RTSPtoRTMP(threading.Thread):
         self.rtmp_endpoint = rtmp_endpoint
         self.redis_conn = redis_conn
         self.device_id = device_id
+        self.__memory_buffer_size = memory_buffer
         self.is_decode_packets_event = is_decode_packets_event
         self.lock_condition = lock_condition
         self.query_timestamp = query_timestamp
@@ -50,6 +52,9 @@ class RTSPtoRTMP(threading.Thread):
 
     def run(self):
         global RedisLastAccessPrefix    
+
+        # cleanup all redis memory
+        memoryCleanup(self.redis_conn, self.device_id)
 
         current_packet_group = []
         flush_current_packet_group = False
@@ -74,6 +79,9 @@ class RTSPtoRTMP(threading.Thread):
                     for c in self.in_container.streams.audio:
                         print(c)
                     # self.in_audio_stream = self.in_container.streams.audio[0]
+
+                # set codec context in redis
+                setCodecInfo(self.redis_conn, self.in_container)
 
                 # init mp4 local archive
                 if self._disk_path is not None:
@@ -133,12 +141,14 @@ class RTSPtoRTMP(threading.Thread):
                     filename_human = datetime.datetime.fromtimestamp(iframe_start_timestamp/1000)
                     current_ts = int(time.time() * 1000)
                     cts_human = datetime.datetime.fromtimestamp(current_ts/1000)
-                    print("next file TS: ", iframe_start_timestamp, "next file TS (human): ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'), "current: ", current_ts, "current human: ", cts_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
+                    # print("next file TS: ", iframe_start_timestamp, "next file TS (human): ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'), "current: ", current_ts, "current human: ", cts_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
 
                 if keyframe_found == False:
                     print("skipping, since not a keyframe")
                     continue
 
+                # method to push packet to the redis in a in-memory buffer
+                packetToInMemoryBuffer(self.redis_conn, self.__memory_buffer_size, self.device_id, self.in_container, packet)
                 '''
                 Live Redis Settings
                 -------------------
@@ -254,8 +264,8 @@ if __name__ == "__main__":
     decode_packet = threading.Event()
     lock_condition = threading.Condition()
     
-    print("RTPS Endpoint: ",rtsp)
-    print("RTMP Endpoint: ", rtmp)
+    # print("RTPS Endpoint: ",rtsp)
+    # print("RTMP Endpoint: ", rtmp)
     print("Device ID: ", device_id)
     print("memory buffer: ", memory_buffer)
     print("disk path: ", disk_path)
@@ -291,6 +301,7 @@ if __name__ == "__main__":
                     device_id=device_id,
                     disk_path=disk_path, 
                     redis_conn=redis_conn, 
+                    memory_buffer=memory_buffer,
                     is_decode_packets_event=decode_packet, 
                     lock_condition=lock_condition)
     th.daemon = True
@@ -304,6 +315,11 @@ if __name__ == "__main__":
         lock_condition=lock_condition)
     ri.daemon = True
     ri.start()
+
+    # in memory buffer
+    inMemoryThread = InMemoryBuffer(device_id=device_id, memory_buffer=memory_buffer, redis_conn=redis_conn)
+    inMemoryThread.daemon = True
+    inMemoryThread.start()
 
     if disk_path is not None:
         if disk_cleanup_rate is None:
@@ -319,3 +335,5 @@ if __name__ == "__main__":
 
     if disk_path is not None:
         st.join()
+
+    inMemoryThread.join()

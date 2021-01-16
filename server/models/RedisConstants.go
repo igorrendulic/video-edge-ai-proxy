@@ -25,4 +25,11 @@ const (
 	RedisLastAccessQueryTimeKey = "last_query" // last request query time
 	RedisProxyRTMPKey           = "proxy_rtmp" // if the RTMP should be proxied to the Chrysalis cloud
 	RedisProxyStoreKey          = "store"      // if Chrysalis cloud should store the stream to permanent storage
+
+	RedisInMemoryBufferChannel       = "memory_buffer_channel" // pub/sub channel to communicate with python process in order to start decoding frames in the memory buffer
+	RedisInMemoryDecodedImagesPrefix = "memory_decoded_"
+	RedisInMemoryIFrameListPrefix    = "memory_iframe_list_"
+
+	// video codec info
+	RedisCodecVideoInfo = "codec_video_info"
 )

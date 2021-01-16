@@ -16,8 +16,12 @@ package grpcapi
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"io"
+	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +33,9 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
+	"github.com/rs/xid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type StorageInput struct {
@@ -130,6 +137,7 @@ func (gih *grpcImageHandler) ListStreams(req *pb.ListStreamRequest, stream pb.Im
 	return nil
 }
 
+// VideoLatestImage - bidirectional connection with client continously sending live video image
 func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageServer) error {
 
 	clientDeadline := time.Now().Add(time.Duration(15) * time.Second)
@@ -229,7 +237,192 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 		}
 
 		if errStr := stream.Send(vf); errStr != nil {
-			g.Log.Error("send error", errStr)
+			g.Log.Error("grp live image send error", errStr)
 		}
 	}
+}
+
+// VideoBufferProbe is a probing method for in-memory video stream
+func (gih *grpcImageHandler) VideoBufferProbe(ctx context.Context, req *pb.VideoBufferProbeRequest) (*pb.VideoBufferProbeResponse, error) {
+
+	iFrameStreamName := models.RedisInMemoryIFrameListPrefix + req.DeviceId
+
+	codecInfo := &pb.VideoCodec{}
+
+	if req.FromTimestamp <= 0 || req.ToTimestamp <= 0 || req.DeviceId == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "all arguments are required")
+	}
+
+	codecInfoCmd := gih.redisConn.Get(models.RedisCodecVideoInfo)
+	codecInfoBytes, err := codecInfoCmd.Bytes()
+	if err != nil {
+		g.Log.Error("failed to get bytes for code info", err)
+	} else {
+		err := proto.Unmarshal(codecInfoBytes, codecInfo)
+		if err != nil {
+			g.Log.Error("failed to unmarshal codec info", err)
+			return nil, status.Errorf(codes.Internal, "failed to unmarshal code info")
+		}
+	}
+
+	resXRange := gih.redisConn.XRange(iFrameStreamName, strconv.Itoa(int(req.FromTimestamp)), strconv.Itoa(int(req.ToTimestamp)))
+	if resXRange.Err() != nil {
+		g.Log.Error("failed to query for probe range", err)
+		return nil, status.Errorf(codes.Internal, "failed to exeute xrange")
+	}
+	vals, err := resXRange.Result()
+	if err != nil {
+		g.Log.Error("failed to get results", err)
+		return nil, status.Errorf(codes.Internal, "failed to get xrange results")
+	}
+	iframes := make([]*pb.BufferProbeIFrame, 0)
+
+	previous := int64(0)
+	for i, msg := range vals {
+		splitted := strings.Split(msg.ID, "-")
+		tsString := splitted[0]
+		ts, err := strconv.ParseInt(tsString, 10, 64)
+		if err != nil {
+			g.Log.Error("failed to parse iframe ID", err)
+			continue
+		}
+		if i == 0 {
+			previous = int64(ts)
+			continue
+		}
+		iFrameProbe := &pb.BufferProbeIFrame{
+			FromTimestamp: previous,
+			ToTimestamp:   ts - 1,
+		}
+		iframes = append(iframes, iFrameProbe)
+		previous = ts
+	}
+	// add last probe (till the end of the stream)
+	lastProbe := &pb.BufferProbeIFrame{
+		FromTimestamp: previous,
+		ToTimestamp:   req.ToTimestamp,
+	}
+	iframes = append(iframes, lastProbe)
+
+	resp := &pb.VideoBufferProbeResponse{
+		VideoCodec: codecInfo,
+		Iframes:    iframes,
+	}
+
+	return resp, nil
+}
+
+// VideoBufferedImage publishes a request for decoding to redis pub/sub and waits for decoded images to be taken out of Redis XSTREAM
+func (gih *grpcImageHandler) VideoBufferedImage(req *pb.VideoFrameBufferedRequest, stream pb.Image_VideoBufferedImageServer) error {
+
+	from := req.TimestampFrom
+	to := req.TimestampTo
+	deviceID := req.DeviceId
+
+	pubsubMsg := &models.PubSubMessage{
+		DeviceID:      deviceID,
+		FromTimestamp: from,
+		ToTimestamp:   to,
+		RequestID:     xid.New().String(),
+	}
+
+	pubSubMsgBytes, err := json.Marshal(pubsubMsg)
+	if err != nil {
+		g.Log.Error("failed to marshal pubsub Msg", err)
+	}
+	pubSubBase64 := base64.StdEncoding.EncodeToString(pubSubMsgBytes)
+
+	// method is waiting for the images to be decoded and put into a queue with the name streamName
+	streamName := models.RedisInMemoryDecodedImagesPrefix + deviceID + pubsubMsg.RequestID
+
+	// publish to redis request for decoding the queried in memory buffer
+	gih.redisConn.Publish(models.RedisInMemoryBufferChannel, pubSubBase64)
+
+	// read decoded images from the start
+	lastRequestedTs := "0-0"
+
+	// waiting up to 3 x 50ms = max to get an image from redis, otherwise considered that there is no image
+	delayMs := 50
+
+	// the time this whole process started (used to determine timeout)
+	processStarted := time.Now().UTC().Unix() * 1000
+
+	isReadingDone := false
+
+	for {
+
+		if isReadingDone {
+			break
+		}
+
+		currentTime := time.Now().UTC().Unix() * 1000
+
+		if math.Abs(float64(currentTime-processStarted)) > (1000 * 15) {
+			g.Log.Error("request timed out. Waiting for response 15s but nothing happened")
+			break
+		}
+
+		args := &redis.XReadArgs{
+			Streams: []string{streamName, lastRequestedTs},
+			Block:   time.Microsecond * 50,
+			Count:   10,
+		}
+
+		vals, err := gih.redisConn.XRead(args).Result()
+
+		if err != nil {
+			g.Log.Info("waiting for an image, retry #", err.Error())
+			time.Sleep(time.Duration(delayMs))
+			continue
+		}
+		processStarted = time.Now().Unix() * 1000
+		for _, val := range vals {
+			messages := val.Messages
+
+			// loading VideoFrame from redis
+			vf := &pb.VideoFrame{}
+
+			idsToDelete := make([]string, 0)
+
+			if len(messages) > 0 {
+				// reading only latest image
+				lastMessage := messages[len(messages)-1]
+				id := lastMessage.ID
+				lastRequestedTs = id
+
+				idsToDelete = append(idsToDelete, id)
+
+				object := lastMessage.Values
+				if val, ok := object["data"]; ok {
+					str := val.(string)
+					b := []byte(str)
+					err := proto.Unmarshal(b, vf)
+					if err != nil {
+						g.Log.Error("failed to unmarshall VideoFrame proto", err)
+						break
+					}
+					if vf.Data == nil {
+						isReadingDone = true
+						g.Log.Info("done reading in memory buffer decoded images")
+					}
+				}
+				if !isReadingDone {
+					if errStr := stream.Send(vf); errStr != nil {
+						g.Log.Error("grp live image send error", errStr)
+					}
+				}
+			}
+			if len(idsToDelete) > 0 {
+				delResp := gih.redisConn.XDel(streamName, idsToDelete...)
+				numDel, delErr := delResp.Result()
+				if delErr != nil {
+					g.Log.Error("Failed to delete xstream read images", delErr)
+				}
+				g.Log.Info("delete ", numDel, " decoded images")
+			}
+		}
+	}
+	// delete the complete key (best effort)
+	gih.redisConn.Del(streamName)
+	return nil
 }

@@ -15,8 +15,9 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/hashicorp/go-version v1.2.1
 	github.com/kr/pretty v0.2.1 // indirect
+	github.com/rs/xid v1.2.1
 	github.com/stretchr/testify v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20200624020401-64a14ca9d1ad // indirect
 	google.golang.org/grpc v1.30.0
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.25.0
 )

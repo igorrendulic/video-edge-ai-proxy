@@ -90,11 +90,20 @@ message VideoFrame {
     string device_id = 12;
     int64 packet = 13;
     int64 keyframe = 14;
+    bytes extradata = 15;
+    string codec_name = 16;
+    string pix_fmt = 17;
 }
 
 message VideoFrameRequest {
     bool key_frame_only = 1;
     string device_id = 2;
+}
+
+message VideoFrameBufferedRequest {
+    string device_id = 1;
+    int64 timestamp_from = 2;
+    int64 timestamp_to = 3;
 }
 
 // ListStream messages
@@ -136,9 +145,36 @@ message StorageResponse {
     bool start = 2;
 }
 
+// VideoCodec information about the stream
+message VideoCodec {
+    string name = 1;
+    int32 width = 2;
+    int32 height = 3;
+    string pix_fmt = 4;
+    bytes extradata = 5;
+    int32 extradata_size = 6;
+    string long_name = 7;
+}
+
+message BufferProbeIFrame {
+    int64 from_timestamp = 3;
+    int64 to_timestamp = 4;
+}
+message VideoBufferProbeRequest {
+    string device_id = 1;
+    int64 from_timestamp = 2;
+    int64 to_timestamp = 3;
+}
+
+message VideoBufferProbeResponse {
+    repeated BufferProbeIFrame iframes = 1;
+    VideoCodec video_codec = 2;
+}
 
 service Image {
     rpc VideoLatestImage(stream VideoFrameRequest) returns (stream VideoFrame) {}
+    rpc VideoBufferedImage(VideoFrameBufferedRequest) returns (stream VideoFrame) {}
+    rpc VideoBufferProbe(VideoBufferProbeRequest) returns (VideoBufferProbeResponse) {}
     rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}
     rpc Annotate(AnnotateRequest) returns (AnnotateResponse) {}
     rpc Proxy(ProxyRequest) returns (ProxyResponse) {} // start stop rtmp passthrough

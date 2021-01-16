@@ -19,6 +19,16 @@ class ImageStub(object):
                 request_serializer=video__streaming__pb2.VideoFrameRequest.SerializeToString,
                 response_deserializer=video__streaming__pb2.VideoFrame.FromString,
                 )
+        self.VideoBufferedImage = channel.unary_stream(
+                '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferedImage',
+                request_serializer=video__streaming__pb2.VideoFrameBufferedRequest.SerializeToString,
+                response_deserializer=video__streaming__pb2.VideoFrame.FromString,
+                )
+        self.VideoBufferProbe = channel.unary_unary(
+                '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferProbe',
+                request_serializer=video__streaming__pb2.VideoBufferProbeRequest.SerializeToString,
+                response_deserializer=video__streaming__pb2.VideoBufferProbeResponse.FromString,
+                )
         self.ListStreams = channel.unary_stream(
                 '/chrys.cloud.videostreaming.v1beta1.Image/ListStreams',
                 request_serializer=video__streaming__pb2.ListStreamRequest.SerializeToString,
@@ -45,6 +55,18 @@ class ImageServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def VideoLatestImage(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VideoBufferedImage(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VideoBufferProbe(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -82,6 +104,16 @@ def add_ImageServicer_to_server(servicer, server):
                     request_deserializer=video__streaming__pb2.VideoFrameRequest.FromString,
                     response_serializer=video__streaming__pb2.VideoFrame.SerializeToString,
             ),
+            'VideoBufferedImage': grpc.unary_stream_rpc_method_handler(
+                    servicer.VideoBufferedImage,
+                    request_deserializer=video__streaming__pb2.VideoFrameBufferedRequest.FromString,
+                    response_serializer=video__streaming__pb2.VideoFrame.SerializeToString,
+            ),
+            'VideoBufferProbe': grpc.unary_unary_rpc_method_handler(
+                    servicer.VideoBufferProbe,
+                    request_deserializer=video__streaming__pb2.VideoBufferProbeRequest.FromString,
+                    response_serializer=video__streaming__pb2.VideoBufferProbeResponse.SerializeToString,
+            ),
             'ListStreams': grpc.unary_stream_rpc_method_handler(
                     servicer.ListStreams,
                     request_deserializer=video__streaming__pb2.ListStreamRequest.FromString,
@@ -118,6 +150,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -126,7 +159,41 @@ class Image(object):
             video__streaming__pb2.VideoFrameRequest.SerializeToString,
             video__streaming__pb2.VideoFrame.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def VideoBufferedImage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferedImage',
+            video__streaming__pb2.VideoFrameBufferedRequest.SerializeToString,
+            video__streaming__pb2.VideoFrame.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def VideoBufferProbe(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferProbe',
+            video__streaming__pb2.VideoBufferProbeRequest.SerializeToString,
+            video__streaming__pb2.VideoBufferProbeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ListStreams(request,
@@ -134,6 +201,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -142,7 +210,7 @@ class Image(object):
             video__streaming__pb2.ListStreamRequest.SerializeToString,
             video__streaming__pb2.ListStream.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Annotate(request,
@@ -150,6 +218,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -158,7 +227,7 @@ class Image(object):
             video__streaming__pb2.AnnotateRequest.SerializeToString,
             video__streaming__pb2.AnnotateResponse.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Proxy(request,
@@ -166,6 +235,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -174,7 +244,7 @@ class Image(object):
             video__streaming__pb2.ProxyRequest.SerializeToString,
             video__streaming__pb2.ProxyResponse.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Storage(request,
@@ -182,6 +252,7 @@ class Image(object):
             options=(),
             channel_credentials=None,
             call_credentials=None,
+            insecure=False,
             compression=None,
             wait_for_ready=None,
             timeout=None,
@@ -190,4 +261,4 @@ class Image(object):
             video__streaming__pb2.StorageRequest.SerializeToString,
             video__streaming__pb2.StorageResponse.FromString,
             options, channel_credentials,
-            call_credentials, compression, wait_for_ready, timeout, metadata)
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
