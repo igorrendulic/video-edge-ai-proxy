@@ -316,7 +316,7 @@ if __name__ == "__main__":
     ri.daemon = True
     ri.start()
 
-    # in memory buffer
+    # # in memory buffer
     inMemoryThread = InMemoryBuffer(device_id=device_id, memory_buffer=memory_buffer, redis_conn=redis_conn)
     inMemoryThread.daemon = True
     inMemoryThread.start()

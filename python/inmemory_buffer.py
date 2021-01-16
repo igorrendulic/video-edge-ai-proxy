@@ -89,7 +89,6 @@ def packetToInMemoryBuffer(redis_conn,memory_buffer_size, device_id,in_av_contai
                 keyframe = 0
                 if is_keyframe:
                     keyframe = 1
-                    print("keyframe added")
                     redis_conn.xadd(redisIFrameList, {'keyframe':keyframe}, maxlen=memory_buffer_size)
 
                 redis_conn.xadd(redisStreamName, {'data': vfData, 'is_keyframe': keyframe}, maxlen=memory_buffer_size)

@@ -21,7 +21,7 @@ import numpy as np
 import time
 import os
 
-os.environ['DISPLAY'] = ":0"
+# os.environ['DISPLAY'] = ":0"
 
 def gen_image_request(device_name, keyframe_only):
     """ Create an object to request a video frame """
