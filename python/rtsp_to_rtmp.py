@@ -71,7 +71,7 @@ class RTSPtoRTMP(threading.Thread):
 
         while True:
             try:
-                options = {'rtsp_transport': 'tcp', 'stimeout': '5000000', 'max_delay': '5000000', 'use_wallclock_as_timestamps':"1", "fflags":"+genpts", 'acodec':'aac'}
+                options = {'rtsp_transport': 'tcp','stimeout': '5000000', 'max_delay': '5000000', 'use_wallclock_as_timestamps':"1", "fflags":"+genpts", 'acodec':'aac'}
                 self.in_container = av.open(self.rtsp_endpoint, options=options)
                 self.in_video_stream = self.in_container.streams.video[0]
                 self.in_audio_stream = None
@@ -113,35 +113,21 @@ class RTSPtoRTMP(threading.Thread):
                 if packet.is_keyframe:
                     # if we already found a keyframe previously, archive what we have
 
-                    if apg is not None:
-                        # packet_group = current_packet_group.copy()
+                    if len(current_packet_group) > 0:
+                        packet_group = current_packet_group.copy()
                         
                         # send to archiver! (packet_group, iframe_start_timestamp)
-                        if self._disk_path is not None and apg is not None:
-                            # apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
-                            # apg.setPacketGroup(packet_group)
-
-                            if len(apg.packet_group) > 0:
-                                packet_group_queue.put(apg)
-
-
-                            if apg.start_timestamp != iframe_start_timestamp:
-                                print("this was the problem with TS -------------->: ", apg.start_timestamp, iframe_start_timestamp)
-                            
-                            filename_human = datetime.datetime.fromtimestamp(apg.start_timestamp//1000)
-                            print("ArchivePacketGroup GOP size: ", len(apg.packet_group), "file TS: ", apg.start_timestamp, "file human TS: ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
-                            print("Queue size: ", packet_group_queue.qsize(), "GOP size: ", len(apg.packet_group))
+                        if self._disk_path is not None:
+                            apg = ArchivePacketGroup(packet_group, iframe_start_timestamp)
+                            packet_group_queue.put(apg)
 
                     keyframe_found = True
                     current_packet_group = []
                     iframe_start_timestamp = int(round(time.time() * 1000))
-                    apg = ArchivePacketGroup(iframe_start_timestamp)
 
-                    # debugging
-                    filename_human = datetime.datetime.fromtimestamp(iframe_start_timestamp/1000)
-                    current_ts = int(time.time() * 1000)
-                    cts_human = datetime.datetime.fromtimestamp(current_ts/1000)
-                    # print("next file TS: ", iframe_start_timestamp, "next file TS (human): ", filename_human.strftime('%Y-%m-%d %H:%M:%S.%f'), "current: ", current_ts, "current human: ", cts_human.strftime('%Y-%m-%d %H:%M:%S.%f'))
+                if keyframe_found == False:
+                    print("skipping, since not a keyframe")
+                    continue
 
                 if keyframe_found == False:
                     print("skipping, since not a keyframe")
@@ -149,65 +135,56 @@ class RTSPtoRTMP(threading.Thread):
 
                 # method to push packet to the redis in a in-memory buffer
                 packetToInMemoryBuffer(self.redis_conn, self.__memory_buffer_size, self.device_id, self.in_container, packet)
+
                 '''
                 Live Redis Settings
                 -------------------
                 This should be invoked only every 500 ms, This If needs to moved to it's own method
                 '''
-                
-                this_loop_run = int(time.time() * 1000)
+                # shouldn't be a problem for redis but maybe every 200ms to query for latest timestamp only
+                settings_dict = self.redis_conn.hgetall(RedisLastAccessPrefix + device_id)
 
-                # store settings to Redis only every 500ms
-                if this_loop_run - last_loop_run > 500:
-
-                    settings_dict = self.redis_conn.hgetall(RedisLastAccessPrefix + device_id)
-
-                    if settings_dict is not None and len(settings_dict) > 0:
-
-                        settings_dict = { y.decode('utf-8'): settings_dict.get(y).decode('utf-8') for y in settings_dict.keys() } 
-                        if "last_query" in settings_dict:
-                            ts = settings_dict['last_query']
+                if settings_dict is not None and len(settings_dict) > 0:
+                    settings_dict = { y.decode('utf-8'): settings_dict.get(y).decode('utf-8') for y in settings_dict.keys() } 
+                    if "last_query" in settings_dict:
+                        ts = settings_dict['last_query']
+                    else:
+                        continue
+                    
+                    # check if stream should be forwarded to Chrysalis Cloud RTMP
+                    if "proxy_rtmp" in settings_dict:
+                        should_mux_string = settings_dict['proxy_rtmp']
+                        previous_should_mux = should_mux
+                        if should_mux_string == "1":
+                            should_mux = True
                         else:
-                            continue
-                        
-                        # check if stream should be forwarded to Chrysalis Cloud RTMP
-                        if "proxy_rtmp" in settings_dict:
-                            should_mux_string = settings_dict['proxy_rtmp']
-                            previous_should_mux = should_mux
-                            if should_mux_string == "1":
-                                should_mux = True
-                            else:
-                                should_mux = False
-                        
-                            # check if it's time for flushing of current_packet_group 
-                            if should_mux != previous_should_mux and should_mux == True:
-                                flush_current_packet_group = True
-                            else:
-                                flush_current_packet_group = False
-                        
-                        ts = int(ts)
-                        ts_now = int(round(time.time() * 1000))
-                        diff = ts_now - ts
-                        # if no request in 10 seconds, stop
-                        if diff < 10000:
-                            try:
-                                self.lock_condition.acquire()
-                                query_timestamp = ts
-                                self.lock_condition.notify_all()
-                            finally:
-                                self.lock_condition.release() 
+                            should_mux = False
+                    
+                        # check if it's time for flushing of current_packet_group 
+                        if should_mux != previous_should_mux and should_mux == True:
+                            flush_current_packet_group = True
+                        else:
+                            flush_current_packet_group = False
+                    
+                    ts = int(ts)
+                    ts_now = int(round(time.time() * 1000))
+                    diff = ts_now - ts
+                    # if no request in 10 seconds, stop
+                    if diff < 10000:
+                        try:
+                            self.lock_condition.acquire()
+                            query_timestamp = ts
+                            self.lock_condition.notify_all()
+                        finally:
+                            self.lock_condition.release() 
 
-                            self.is_decode_packets_event.set()
-
-                    last_loop_run = int(time.time() * 1000)
+                        self.is_decode_packets_event.set()
 
                 if packet.is_keyframe:
                     self.is_decode_packets_event.clear()
                     self._packet_queue.queue.clear()
                 
-                # adding packets to APG
-                if apg is not None:
-                    apg.addPacket(packet)
+                
                 self._packet_queue.put(packet)
 
                 try:
@@ -245,6 +222,7 @@ if __name__ == "__main__":
     parser.add_argument("--rtmp", type=str, default=None, required=False)
     parser.add_argument("--device_id", type=str, default=None, required=True)
     parser.add_argument("--memory_buffer", type=int, default=1, required=False)
+    parser.add_argument("--memory_scale", type=str, default="-1:-1", required=False)
     parser.add_argument("--disk_path", type=str, default=None, required=False)
     parser.add_argument("--disk_cleanup_rate", type=str, default=None, required=False)
     parser.add_argument("--redis_host", type=str, default=None, required=False)
@@ -256,6 +234,7 @@ if __name__ == "__main__":
     rtsp = args.rtsp
     device_id = args.device_id
     memory_buffer=args.memory_buffer
+    memory_scale=args.memory_scale
     disk_path=args.disk_path
     disk_cleanup_rate=args.disk_cleanup_rate
     redis_host = args.redis_host
@@ -267,7 +246,7 @@ if __name__ == "__main__":
     # print("RTPS Endpoint: ",rtsp)
     # print("RTMP Endpoint: ", rtmp)
     print("Device ID: ", device_id)
-    print("memory buffer: ", memory_buffer)
+    print("memory buffer: ", memory_buffer, "rescaling video: ", memory_scale)
     print("disk path: ", disk_path)
     print("redis host: ", redis_host)
     print("redis port: ", redis_port)
@@ -282,7 +261,6 @@ if __name__ == "__main__":
             pool = redis.ConnectionPool(host=redis_host, port=redis_port)
         else:
             pool = redis.ConnectionPool(host="redis", port="6379")
-        # pool = redis.ConnectionPool(host="localhost", port="6379")
         redis_conn = redis.Redis(connection_pool=pool)
     except Exception as ex:
         print("failed to connect to redis instance", ex)
@@ -317,7 +295,7 @@ if __name__ == "__main__":
     ri.start()
 
     # # in memory buffer
-    inMemoryThread = InMemoryBuffer(device_id=device_id, memory_buffer=memory_buffer, redis_conn=redis_conn)
+    inMemoryThread = InMemoryBuffer(device_id=device_id, memory_scale=memory_scale, redis_conn=redis_conn)
     inMemoryThread.daemon = True
     inMemoryThread.start()
 

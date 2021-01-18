@@ -24,10 +24,10 @@ class ImageStub(object):
                 request_serializer=video__streaming__pb2.VideoFrameBufferedRequest.SerializeToString,
                 response_deserializer=video__streaming__pb2.VideoFrame.FromString,
                 )
-        self.VideoBufferProbe = channel.unary_unary(
-                '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferProbe',
-                request_serializer=video__streaming__pb2.VideoBufferProbeRequest.SerializeToString,
-                response_deserializer=video__streaming__pb2.VideoBufferProbeResponse.FromString,
+        self.VideoProbe = channel.unary_unary(
+                '/chrys.cloud.videostreaming.v1beta1.Image/VideoProbe',
+                request_serializer=video__streaming__pb2.VideoProbeRequest.SerializeToString,
+                response_deserializer=video__streaming__pb2.VideoProbeResponse.FromString,
                 )
         self.ListStreams = channel.unary_stream(
                 '/chrys.cloud.videostreaming.v1beta1.Image/ListStreams',
@@ -49,6 +49,11 @@ class ImageStub(object):
                 request_serializer=video__streaming__pb2.StorageRequest.SerializeToString,
                 response_deserializer=video__streaming__pb2.StorageResponse.FromString,
                 )
+        self.SystemTime = channel.unary_unary(
+                '/chrys.cloud.videostreaming.v1beta1.Image/SystemTime',
+                request_serializer=video__streaming__pb2.SystemTimeRequest.SerializeToString,
+                response_deserializer=video__streaming__pb2.SystemTimeResponse.FromString,
+                )
 
 
 class ImageServicer(object):
@@ -66,7 +71,7 @@ class ImageServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def VideoBufferProbe(self, request, context):
+    def VideoProbe(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -96,6 +101,12 @@ class ImageServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SystemTime(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ImageServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -109,10 +120,10 @@ def add_ImageServicer_to_server(servicer, server):
                     request_deserializer=video__streaming__pb2.VideoFrameBufferedRequest.FromString,
                     response_serializer=video__streaming__pb2.VideoFrame.SerializeToString,
             ),
-            'VideoBufferProbe': grpc.unary_unary_rpc_method_handler(
-                    servicer.VideoBufferProbe,
-                    request_deserializer=video__streaming__pb2.VideoBufferProbeRequest.FromString,
-                    response_serializer=video__streaming__pb2.VideoBufferProbeResponse.SerializeToString,
+            'VideoProbe': grpc.unary_unary_rpc_method_handler(
+                    servicer.VideoProbe,
+                    request_deserializer=video__streaming__pb2.VideoProbeRequest.FromString,
+                    response_serializer=video__streaming__pb2.VideoProbeResponse.SerializeToString,
             ),
             'ListStreams': grpc.unary_stream_rpc_method_handler(
                     servicer.ListStreams,
@@ -133,6 +144,11 @@ def add_ImageServicer_to_server(servicer, server):
                     servicer.Storage,
                     request_deserializer=video__streaming__pb2.StorageRequest.FromString,
                     response_serializer=video__streaming__pb2.StorageResponse.SerializeToString,
+            ),
+            'SystemTime': grpc.unary_unary_rpc_method_handler(
+                    servicer.SystemTime,
+                    request_deserializer=video__streaming__pb2.SystemTimeRequest.FromString,
+                    response_serializer=video__streaming__pb2.SystemTimeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -179,7 +195,7 @@ class Image(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def VideoBufferProbe(request,
+    def VideoProbe(request,
             target,
             options=(),
             channel_credentials=None,
@@ -189,9 +205,9 @@ class Image(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoBufferProbe',
-            video__streaming__pb2.VideoBufferProbeRequest.SerializeToString,
-            video__streaming__pb2.VideoBufferProbeResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoProbe',
+            video__streaming__pb2.VideoProbeRequest.SerializeToString,
+            video__streaming__pb2.VideoProbeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -260,5 +276,22 @@ class Image(object):
         return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/Storage',
             video__streaming__pb2.StorageRequest.SerializeToString,
             video__streaming__pb2.StorageResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SystemTime(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/SystemTime',
+            video__streaming__pb2.SystemTimeRequest.SerializeToString,
+            video__streaming__pb2.SystemTimeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

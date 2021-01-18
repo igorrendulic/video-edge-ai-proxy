@@ -21,7 +21,6 @@ import (
 	"io"
 	"math"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -243,15 +242,9 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 }
 
 // VideoBufferProbe is a probing method for in-memory video stream
-func (gih *grpcImageHandler) VideoBufferProbe(ctx context.Context, req *pb.VideoBufferProbeRequest) (*pb.VideoBufferProbeResponse, error) {
-
-	iFrameStreamName := models.RedisInMemoryIFrameListPrefix + req.DeviceId
+func (gih *grpcImageHandler) VideoProbe(ctx context.Context, req *pb.VideoProbeRequest) (*pb.VideoProbeResponse, error) {
 
 	codecInfo := &pb.VideoCodec{}
-
-	if req.FromTimestamp <= 0 || req.ToTimestamp <= 0 || req.DeviceId == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "all arguments are required")
-	}
 
 	codecInfoCmd := gih.redisConn.Get(models.RedisCodecVideoInfo)
 	codecInfoBytes, err := codecInfoCmd.Bytes()
@@ -265,48 +258,20 @@ func (gih *grpcImageHandler) VideoBufferProbe(ctx context.Context, req *pb.Video
 		}
 	}
 
-	resXRange := gih.redisConn.XRange(iFrameStreamName, strconv.Itoa(int(req.FromTimestamp)), strconv.Itoa(int(req.ToTimestamp)))
-	if resXRange.Err() != nil {
-		g.Log.Error("failed to query for probe range", err)
-		return nil, status.Errorf(codes.Internal, "failed to exeute xrange")
-	}
-	vals, err := resXRange.Result()
-	if err != nil {
-		g.Log.Error("failed to get results", err)
-		return nil, status.Errorf(codes.Internal, "failed to get xrange results")
-	}
-	iframes := make([]*pb.BufferProbeIFrame, 0)
-
-	previous := int64(0)
-	for i, msg := range vals {
-		splitted := strings.Split(msg.ID, "-")
-		tsString := splitted[0]
-		ts, err := strconv.ParseInt(tsString, 10, 64)
-		if err != nil {
-			g.Log.Error("failed to parse iframe ID", err)
-			continue
-		}
-		if i == 0 {
-			previous = int64(ts)
-			continue
-		}
-		iFrameProbe := &pb.BufferProbeIFrame{
-			FromTimestamp: previous,
-			ToTimestamp:   ts - 1,
-		}
-		iframes = append(iframes, iFrameProbe)
-		previous = ts
-	}
-	// add last probe (till the end of the stream)
-	lastProbe := &pb.BufferProbeIFrame{
-		FromTimestamp: previous,
-		ToTimestamp:   req.ToTimestamp,
-	}
-	iframes = append(iframes, lastProbe)
-
-	resp := &pb.VideoBufferProbeResponse{
+	resp := &pb.VideoProbeResponse{
 		VideoCodec: codecInfo,
-		Iframes:    iframes,
+	}
+
+	return resp, nil
+}
+
+// System time returns current systems time (taken from redis)
+func (gih *grpcImageHandler) SystemTime(ctx context.Context, req *pb.SystemTimeRequest) (*pb.SystemTimeResponse, error) {
+	sysTime := gih.redisConn.Time()
+	t := sysTime.Val()
+
+	resp := &pb.SystemTimeResponse{
+		CurrentTime: t.UTC().Unix() * 1000,
 	}
 
 	return resp, nil
@@ -350,6 +315,17 @@ func (gih *grpcImageHandler) VideoBufferedImage(req *pb.VideoFrameBufferedReques
 	isReadingDone := false
 
 	for {
+
+		select {
+		case <-stream.Context().Done():
+			// memory cleanup
+
+			gih.redisConn.Del(streamName)
+
+			g.Log.Warn("Context done: ", stream.Context().Err())
+			return stream.Context().Err()
+		default:
+		}
 
 		if isReadingDone {
 			break
@@ -403,7 +379,7 @@ func (gih *grpcImageHandler) VideoBufferedImage(req *pb.VideoFrameBufferedReques
 					}
 					if vf.Data == nil {
 						isReadingDone = true
-						g.Log.Info("done reading in memory buffer decoded images")
+						g.Log.Info("succesfully retrieved in-memory buffer for query ", deviceID, " [ ", from, " : ", to, " ]")
 					}
 				}
 				if !isReadingDone {
@@ -414,15 +390,15 @@ func (gih *grpcImageHandler) VideoBufferedImage(req *pb.VideoFrameBufferedReques
 			}
 			if len(idsToDelete) > 0 {
 				delResp := gih.redisConn.XDel(streamName, idsToDelete...)
-				numDel, delErr := delResp.Result()
+				_, delErr := delResp.Result()
 				if delErr != nil {
 					g.Log.Error("Failed to delete xstream read images", delErr)
 				}
-				g.Log.Info("delete ", numDel, " decoded images")
 			}
 		}
 	}
 	// delete the complete key (best effort)
 	gih.redisConn.Del(streamName)
+
 	return nil
 }

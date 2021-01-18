@@ -1,4 +1,5 @@
 import threading
+from typing import MutableSequence
 import av
 import base64
 import redis
@@ -8,6 +9,7 @@ import io
 import numpy as np
 import time
 from proto import video_streaming_pb2
+import multiprocessing
 
 # constants from global vars
 from global_vars import RedisInMemoryBufferChannel,RedisInMemoryDecodedImagesPrefix, RedisInMemoryIFrameListPrefix,RedisCodecVideoInfo,RedisInMemoryQueuePrefix
@@ -28,6 +30,7 @@ def setCodecInfo(redis_conn, in_av_container):
     if len(streams) > 0:
         for stream in streams:
             if stream.type == "video":
+
                 codec_ctx = stream.codec_context
                 vc = video_streaming_pb2.VideoCodec()
                 vc.name = codec_ctx.name
@@ -37,8 +40,7 @@ def setCodecInfo(redis_conn, in_av_container):
                 vc.pix_fmt = codec_ctx.pix_fmt
                 vc.extradata = codec_ctx.extradata
                 vc.extradata_size = codec_ctx.extradata_size
-                
-                
+
                 vcData = vc.SerializeToString()
                 redis_conn.set(RedisCodecVideoInfo, vcData)
 
@@ -65,7 +67,6 @@ def packetToInMemoryBuffer(redis_conn,memory_buffer_size, device_id,in_av_contai
                 codec_ctx = stream.codec_context
                 video_height = codec_ctx.height
                 video_width = codec_ctx.width
-                extradata = codec_ctx.extradata
                 is_keyframe = packet.is_keyframe
                 packetBytes = packet.to_bytes()
                 codec_name = codec_ctx.name
@@ -98,12 +99,13 @@ class InMemoryBuffer(threading.Thread):
     '''
     InMemoryBuffer stores packet by packet incoming video stream to redis queue
     '''
-    def __init__(self, device_id, memory_buffer, redis_conn):
+    def __init__(self, device_id, memory_scale, redis_conn):
         threading.Thread.__init__(self)
+
         self.__redis_conn = redis_conn
         self.__device_id = device_id
-        self.__buffer_size = memory_buffer
-        self.__requestId = None
+        self.__filter_scale = memory_scale
+
 
     def run(self):
 
@@ -113,15 +115,6 @@ class InMemoryBuffer(threading.Thread):
             codec_info = getCodecInfo(self.__redis_conn)
             time.sleep(0.1)
 
-        decoder = av.CodecContext.create(codec_info.name, 'r')
-        decoder.width = codec_info.width
-        decoder.height = codec_info.height
-        decoder.pix_fmt = codec_info.pix_fmt
-        decoder.extradata = codec_info.extradata # important for decoding (PPS, SPS)
-        decoder.thread_type = 'AUTO'
-
-        # default redis stream into which the decoded images go
-        decodedStreamName = RedisInMemoryDecodedImagesPrefix + self.__device_id
 
         ps = self.__redis_conn.pubsub()
         ps.subscribe(RedisInMemoryBufferChannel)
@@ -136,61 +129,105 @@ class InMemoryBuffer(threading.Thread):
                         fromTs = data["fromTimestamp"]
                         toTs = data["toTimestamp"]
                         requestID = data["requestId"]
-                        self.__requestId = requestID
-                        decodedStreamName = RedisInMemoryDecodedImagesPrefix + self.__device_id + requestID
 
-                        iframeStreamName = RedisInMemoryIFrameListPrefix + deviceId
-                        # this is where we start our query
-                        queryTs = self.findClosestIFrameTimestamp(iframeStreamName, fromTs)
+                        p = multiprocessing.Process(target=self.query_results, args=(codec_info, requestID, deviceId, fromTs, toTs, ))
+                        p.daemon = True
+                        p.start()
 
-                        print("Starting to decode in-memory GOP: ", deviceId, fromTs, toTs, queryTs)
-                        streamName = RedisInMemoryQueuePrefix + deviceId
+                        
+                        # self.query_results(codec_info, requestID, deviceId, fromTs, toTs)
+                        # queryTh = threading.Thread(target=self.query_results, args=(requestID, deviceId, fromTs, toTs, ))
+                        # queryTh.daemon = True
+                        # queryTh.start()
+                        # queryTh.join()
+                        
+                       
+    def query_results(self, codec_info, requestID, deviceId, fromTs, toTs):
 
-                        firstIFrameFound = False # used when fromTS is before anything in queue at all (so first I-frame picket)
-                        while True:
-                            buffer = self.__redis_conn.xread({streamName: queryTs}, count=30)
-                            if len(buffer) > 0:
-                                arr = buffer[0]
-                                inner_buffer = arr[1]
-                                last = inner_buffer[-1]
-                                queryTs = last[0] # remember where to query from next
+        decoder = av.CodecContext.create(codec_info.name,'r')
+        decoder.width = codec_info.width
+        decoder.height = codec_info.height
+        decoder.pix_fmt = codec_info.pix_fmt
+        decoder.extradata = codec_info.extradata # important for decoding (PPS, SPS)
+        decoder.thread_type = 'AUTO'
 
-                                # check if we've read everything, exit loop
-                                last = int(queryTs.decode('utf-8').split("-")[0])
-                                if last >= int(toTs):
-                                    print("inmemory buffer decoding finished")
-                                    break
+        # print("Available filters: ", av.filter.filters_available)
+        # settings default memory scaling grpah for in memory queue
+        graph = av.filter.Graph()
+        fchain = [graph.add_buffer(width=codec_info.width, height=codec_info.height, format=codec_info.pix_fmt, name=requestID)]
 
-                                for compressed in inner_buffer:
-                                    compressedData = compressed[1]
+        fchain.append(graph.add("scale",self.__filter_scale))
+        fchain[-2].link_to(fchain[-1])
+        
+        fchain.append(graph.add('buffersink'))
+        fchain[-2].link_to(fchain[-1])
 
-                                    content = {}
-                                    for key, value in compressedData.items():
-                                        content[key.decode("utf-8")] = value
+        graph.configure()
 
-                                    if content["is_keyframe"].decode('utf-8') == "0" and firstIFrameFound is False:
-                                        print("First I-Frame found")
-                                        firstIFrameFound = True
-                                    
-                                    if not firstIFrameFound:
-                                        continue
+        decodedStreamName = RedisInMemoryDecodedImagesPrefix + deviceId + requestID
 
-                                    vf = video_streaming_pb2.VideoFrame()
-                                    vf.ParseFromString(content["data"])
+        iframeStreamName = RedisInMemoryIFrameListPrefix + deviceId
+        # this is where we start our query
+        queryTs = self.findClosestIFrameTimestamp(iframeStreamName, fromTs)
 
-                                    frame_buf = io.BytesIO(vf.data)
-                                    size = frame_buf.getbuffer().nbytes
-                                    packet = av.Packet(size)
-                                    frame_buf.readinto(packet)
+        print("Starting to decode in-memory GOP: ", deviceId, fromTs, toTs, queryTs)
+        streamName = RedisInMemoryQueuePrefix + deviceId
+        
+        # sanity check for timestampTo
+        redis_time = self.__redis_conn.time()
+        redis_time = int(redis_time[0] + (redis_time[1] / 1000000)) * 1000
+        if toTs > redis_time:
+            toTs = redis_time
 
-                                    frames = decoder.decode(packet) # should be only 1 frame per packet
-                                    
-                                    self.addToRedisDecodedImage(decodedStreamName, frames, packet)
-                        # signal finish (None video frame)
-                        self.addToRedisDecodedImage(decodedStreamName, None, None)
+        firstIFrameFound = False # used when fromTS is before anything in queue at all (so first I-frame picket)
+        while True:
+            buffer = self.__redis_conn.xread({streamName: queryTs}, count=30)
+            if len(buffer) > 0:
+                arr = buffer[0]
+                inner_buffer = arr[1]
+                last = inner_buffer[-1]
+                queryTs = last[0] # remember where to query from next
+
+                # check if we've read everything, exit loop
+                last = int(queryTs.decode('utf-8').split("-")[0])
+                if last >= int(toTs):
+                    print("inmemory buffer decoding finished")
+                    break
+
+                for compressed in inner_buffer:
+                    compressedData = compressed[1]
+
+                    content = {}
+                    for key, value in compressedData.items():
+                        content[key.decode("utf-8")] = value
+
+                    if content["is_keyframe"].decode('utf-8') == "0" and firstIFrameFound is False:
+                        print("First I-Frame found")
+                        firstIFrameFound = True
+                    
+                    if not firstIFrameFound:
+                        continue
+
+                    vf = video_streaming_pb2.VideoFrame()
+                    vf.ParseFromString(content["data"])
+
+                    frame_buf = io.BytesIO(vf.data)
+                    size = frame_buf.getbuffer().nbytes
+                    packet = av.Packet(size)
+                    frame_buf.readinto(packet)
+                    # packet.pts = vf.pts
+                    # packet.dts = vf.dts
+
+                    frames = decoder.decode(packet) or () # should be only 1 frame per packet (for video)
+                    if len(frames) <= 0:
+                        continue
+
+                    self.addToRedisDecodedImage(graph, decodedStreamName, frames, packet)
+        # signal finish (None video frame)
+        self.addToRedisDecodedImage(graph, decodedStreamName, None, None)
 
 
-
+           
     def findClosestIFrameTimestamp(self, streamName, fromTs):
         '''
         Finds the closest timestamp at exact or before the fromTimestamp in a small queue of iframes
@@ -228,7 +265,7 @@ class InMemoryBuffer(threading.Thread):
         print("found key frame: ", ts, tsPart)
         return str(int(ts)-1) + "-" + tsPart
         
-    def addToRedisDecodedImage(self, streamName, frames, packet):
+    def addToRedisDecodedImage(self, graph, streamName, frames, packet):
         if frames is None: # signal finish of in-memory buffer read
             vf = video_streaming_pb2.VideoFrame()
             vfData = vf.SerializeToString()
@@ -237,38 +274,46 @@ class InMemoryBuffer(threading.Thread):
 
         # push decoded frames to redis to be read by server and served back through GRPC
         for frame in frames:
-            img = frame.to_ndarray(format='bgr24')
-            shape = img.shape
-
-            img_bytes = np.ndarray.tobytes(img)
+            graph.push(frame)
             
-            timestamp = int(time.time() * 1000)
-            if packet.pts is not None and packet.time_base is not None:
-                timestamp = int(packet.pts * float(packet.time_base))
+            keepPulling = True
+            while keepPulling:
+                try:
+                    frame = graph.pull()
+                    img = frame.to_ndarray(format='bgr24')
+                    shape = img.shape
 
-            vf = video_streaming_pb2.VideoFrame()
-            vf.data = img_bytes
-            vf.width = frame.width
-            vf.height = frame.height
-            vf.timestamp = timestamp
-            vf.frame_type = frame.pict_type.name
-            if packet.pts:
-                vf.pts = packet.pts
-            if packet.dts:
-                vf.dts = packet.dts
-            if packet.time_base is not None:
-                vf.time_base = float(packet.time_base)
-            vf.is_keyframe = packet.is_keyframe
-            vf.is_corrupt = packet.is_corrupt
+                    img_bytes = np.ndarray.tobytes(img)
+                    
+                    timestamp = int(time.time() * 1000)
+                    if packet.pts is not None and packet.time_base is not None:
+                        timestamp = int(packet.pts * float(packet.time_base))
 
-            for (i,dim) in enumerate(shape):
-                newDim = video_streaming_pb2.ShapeProto.Dim()
-                newDim.size = dim
-                newDim.name = str(i)
-                vf.shape.dim.append(newDim)
+                    vf = video_streaming_pb2.VideoFrame()
+                    vf.data = img_bytes
+                    vf.width = frame.width
+                    vf.height = frame.height
+                    vf.timestamp = timestamp
+                    vf.frame_type = frame.pict_type.name
+                    if packet.pts:
+                        vf.pts = packet.pts
+                    if packet.dts:
+                        vf.dts = packet.dts
+                    if packet.time_base is not None:
+                        vf.time_base = float(packet.time_base)
+                    vf.is_keyframe = packet.is_keyframe
+                    vf.is_corrupt = packet.is_corrupt
 
-            vfData = vf.SerializeToString()
-            self.pushDecodedToRedis(streamName, vfData)
+                    for (i,dim) in enumerate(shape):
+                        newDim = video_streaming_pb2.ShapeProto.Dim()
+                        newDim.size = dim
+                        newDim.name = str(i)
+                        vf.shape.dim.append(newDim)
+
+                    vfData = vf.SerializeToString()
+                    self.pushDecodedToRedis(streamName, vfData)
+                except Exception as e:
+                    keepPulling = False
 
     def pushDecodedToRedis(self, streamName, vfData):
          # in case reading is slow, then this waits until some memory is freed

@@ -162,8 +162,11 @@ func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *mod
 			envVars = append(envVars, "redis_port="+host[1])
 		}
 	}
+	if g.Conf.Buffer.InMemoryScale != "" {
+		envVars = append(envVars, "memory_scale="+g.Conf.Buffer.InMemoryScale)
+	}
 
-	envVars = append(envVars, "PYTHONUNBUFFERED=0")
+	envVars = append(envVars, "PYTHONUNBUFFERED=0") // for output to console
 
 	_, ccErr := cl.ContainerCreate(strings.ToLower(process.Name), &container.Config{
 		Image: process.ImageTag,

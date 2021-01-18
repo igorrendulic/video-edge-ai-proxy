@@ -57,6 +57,7 @@ type ApiSubconfig struct {
 // Buffer - in memory and on disk buffering
 type BufferSubconfig struct {
 	InMemory               int    `yaml:"in_memory"`                // number of decoded frames to store in memory per camera
+	InMemoryScale          string `yaml:"in_memory_scale"`          // scale in-memory video to desired size (e.g.: default = "-1:-1" , "400:-1", "300x200", "iw/2:ih/2")
 	OnDisk                 bool   `yaml:"on_disk"`                  // store key-frame segmented mp4 files to disk
 	OnDiskCleanupOlderThan string `yaml:"on_disk_clean_older_than"` // clean up mp4 segments after X time
 	OnDiskFolder           string `yaml:"on_disk_folder"`           // location to store mp4 segments

@@ -21,8 +21,6 @@ import numpy as np
 import time
 import os
 
-# os.environ['DISPLAY'] = ":0"
-
 def gen_image_request(device_name, keyframe_only):
     """ Create an object to request a video frame """
 
@@ -58,13 +56,8 @@ if __name__ == "__main__":
                 reshape = tuple([int(dim.size) for dim in frame.shape.dim])
                 re_img = np.reshape(re_img, reshape)
 
-                # add camera name
-                cv2.namedWindow('box', cv2.WINDOW_NORMAL)
-                cv2.resizeWindow('box', 640,480)
-                cv2.setWindowTitle('box', args.device) 
+                # display image
                 cv2.imshow('box', re_img)
                 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-
-    cv2.destroyWindow('box')

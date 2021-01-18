@@ -156,27 +156,26 @@ message VideoCodec {
     string long_name = 7;
 }
 
-message BufferProbeIFrame {
-    int64 from_timestamp = 3;
-    int64 to_timestamp = 4;
-}
-message VideoBufferProbeRequest {
+message VideoProbeRequest {
     string device_id = 1;
-    int64 from_timestamp = 2;
-    int64 to_timestamp = 3;
 }
 
-message VideoBufferProbeResponse {
-    repeated BufferProbeIFrame iframes = 1;
+message VideoProbeResponse {
     VideoCodec video_codec = 2;
 }
+
+message SystemTimeResponse {
+    int64 current_time = 1;
+}
+message SystemTimeRequest {}
 
 service Image {
     rpc VideoLatestImage(stream VideoFrameRequest) returns (stream VideoFrame) {}
     rpc VideoBufferedImage(VideoFrameBufferedRequest) returns (stream VideoFrame) {}
-    rpc VideoBufferProbe(VideoBufferProbeRequest) returns (VideoBufferProbeResponse) {}
+    rpc VideoProbe(VideoProbeRequest) returns (VideoProbeResponse) {}
     rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}
     rpc Annotate(AnnotateRequest) returns (AnnotateResponse) {}
     rpc Proxy(ProxyRequest) returns (ProxyResponse) {} // start stop rtmp passthrough
     rpc Storage(StorageRequest) returns (StorageResponse) {} // start stop storage request on the Chrysalis servers
+    rpc SystemTime(SystemTimeRequest) returns (SystemTimeResponse) {} // returns current system time
 }

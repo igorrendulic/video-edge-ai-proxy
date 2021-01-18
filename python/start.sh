@@ -9,6 +9,7 @@ rtsp_endpoint=${rtsp_endpoint}
 device_id=${device_id}
 rtmp_endpoint=${rtmp_endpoint}
 in_memory_buffer=${in_memory_buffer}
+in_memory_scale=${memory_scale}
 disk_buffer_path=${disk_buffer_path}
 disk_cleanup_rate=${disk_cleanup_rate}
 redis_host=${redis_host}
@@ -33,6 +34,9 @@ if [ ! -z "$rtmp_endpoint" ]; then
 fi
 if [ ! -z "$in_memory_buffer" ]; then
     cmd="$cmd --memory_buffer $in_memory_buffer"
+fi
+if [ ! -z "$in_memory_scame" ]; then
+    cmd="$cmd --memory_scale $in_memory_buffer"
 fi
 if [ ! -z "$disk_buffer_path" ]; then
     cmd="$cmd --disk_path $disk_buffer_path"

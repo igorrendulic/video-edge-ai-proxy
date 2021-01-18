@@ -22,7 +22,9 @@ import numpy as np
 import time
 import os
 import threading
+import sys
 
+# create in-memory buffer gRPC request
 def gen_buffered_image_request(device_name, timestamp_from, timestamp_to):
     """ Create an object to request a video frame """
 
@@ -34,21 +36,24 @@ def gen_buffered_image_request(device_name, timestamp_from, timestamp_to):
     return req
 
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Chrysalis Edge buffered images example')
     parser.add_argument("--device", type=str, default=None, required=True)
     args = parser.parse_args()
     device_id = args.device
 
-    timestampTo = int(time.time() * 1000)
-    timestampFrom = timestampTo - (1000 * 50) # 6 seconds in the past
+    # processing everything in the in-memory buffer
 
     # grpc connection to video-edge-ai-proxy
     options = [('grpc.max_receive_message_length', 50 * 1024 * 1024)]
     channel = grpc.insecure_channel('127.0.0.1:50001', options=options)
     stub = video_streaming_pb2_grpc.ImageStub(channel)
 
-    duration = timestampTo - timestampFrom
+    # first get the system time (not necessary but sure to be more precise on different systems)
+    sysTime = stub.SystemTime(video_streaming_pb2.SystemTimeRequest())
+    timestampTo = sysTime.current_time
+    timestampFrom = 0 # beginning of the in-memory queue
 
     num_images = 0
     start_time = int(time.time() * 1000)
@@ -66,11 +71,9 @@ if __name__ == "__main__":
         if len(frame.shape.dim) > 0:
             reshape = tuple([int(dim.size) for dim in frame.shape.dim])
             re_img = np.reshape(re_img, reshape)
-            num_images += 1
 
-            cv2.namedWindow('box', cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('box', 640,480)
-            cv2.setWindowTitle('box', device_id) 
+            # # display and count number of images retrieved from buffer
+            num_images += 1
             cv2.imshow('box', re_img)
             
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -79,8 +82,7 @@ if __name__ == "__main__":
     if images_found: # don't destroy window if nothing ever displayed
         end_time = int(time.time() * 1000)
 
-        print("Total execution time:", str(end_time - start_time), ": ", (end_time - start_time), "ms", "[Start:End] -> [", str(timestampFrom), ":", str(timestampTo), "]", "#images: ", num_images, "segment duration: ", duration)
-        # cv2.destroyWindow('box')
+        print("Total execution time:", str(end_time - start_time), ": ", (end_time - start_time), "ms", "[Start:End] -> [", str(timestampFrom), ":", str(timestampTo), "]", "#images: ", num_images)
     else:
         print("no results found between ", timestampFrom, ",", timestampTo)
     pass
