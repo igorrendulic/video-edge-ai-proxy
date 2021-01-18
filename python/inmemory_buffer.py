@@ -133,13 +133,7 @@ class InMemoryBuffer(threading.Thread):
                         p = multiprocessing.Process(target=self.query_results, args=(codec_info, requestID, deviceId, fromTs, toTs, ))
                         p.daemon = True
                         p.start()
-
-                        
-                        # self.query_results(codec_info, requestID, deviceId, fromTs, toTs)
-                        # queryTh = threading.Thread(target=self.query_results, args=(requestID, deviceId, fromTs, toTs, ))
-                        # queryTh.daemon = True
-                        # queryTh.start()
-                        # queryTh.join()
+                        # we don't wait for process to finish here. It should finish on it's own or fail
                         
                        
     def query_results(self, codec_info, requestID, deviceId, fromTs, toTs):
@@ -206,6 +200,7 @@ class InMemoryBuffer(threading.Thread):
                         firstIFrameFound = True
                     
                     if not firstIFrameFound:
+                        print("skipping first I-Frame search, going next")
                         continue
 
                     vf = video_streaming_pb2.VideoFrame()
@@ -226,8 +221,9 @@ class InMemoryBuffer(threading.Thread):
         # signal finish (None video frame)
         self.addToRedisDecodedImage(graph, decodedStreamName, None, None)
 
-
+        
            
+    # finding the closest timestamp and allowing queryies such as timeFrom=0 and timeTo=sys.maxsize
     def findClosestIFrameTimestamp(self, streamName, fromTs):
         '''
         Finds the closest timestamp at exact or before the fromTimestamp in a small queue of iframes
@@ -265,7 +261,11 @@ class InMemoryBuffer(threading.Thread):
         print("found key frame: ", ts, tsPart)
         return str(int(ts)-1) + "-" + tsPart
         
+
     def addToRedisDecodedImage(self, graph, streamName, frames, packet):
+        '''
+        Converting the raw frame to Protobuf shape and extracing info from the packet
+        '''
         if frames is None: # signal finish of in-memory buffer read
             vf = video_streaming_pb2.VideoFrame()
             vfData = vf.SerializeToString()
@@ -316,7 +316,13 @@ class InMemoryBuffer(threading.Thread):
                     keepPulling = False
 
     def pushDecodedToRedis(self, streamName, vfData):
-         # in case reading is slow, then this waits until some memory is freed
+        '''
+        Push the frame protobuf to redis into xstream.
+        The max size of decoded xstream is 10 images (to limit memory consumption)
+        This buffer is being continously emptied by server upon each read
+        '''
+
+        # in case reading is slow, then this waits until some memory is freed
         # this is due to raw images being stored in memory (e.g. 800x600 RGB would be 4.3MB approx per image)
         started_check = int(time.time() * 1000)
         while True:
