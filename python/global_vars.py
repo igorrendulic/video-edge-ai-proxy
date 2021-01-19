@@ -26,8 +26,8 @@ RedisCodecVideoInfo = "codec_video_info"
 
 class ArchivePacketGroup():
 
-    def __init__(self, start_timestamp):
-        self.packet_group = []
+    def __init__(self, packet_group, start_timestamp):
+        self.packet_group = packet_group
         self.start_timestamp = start_timestamp
 
     def addPacket(self, packet=None):

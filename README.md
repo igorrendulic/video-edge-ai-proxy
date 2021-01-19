@@ -38,6 +38,8 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
   * [Running opencv_display.py](#example-prerequisites)
   * [Running annotation.py](#example-prerequisites)
   * [Running storage_onoff.py](#example-prerequisites)
+  * [Running opencv_inmemory_display.py](#example-prerequisites)
+  * [Running video_probe.py](#example-prerequisites)
 * [Custom configuration](#custom-configuration)
   * [Custom Redis Configuration](#custom-redis-configuration)
   * [Custom Chrysalis Configuration](#custom-chrysalis-configuration)
