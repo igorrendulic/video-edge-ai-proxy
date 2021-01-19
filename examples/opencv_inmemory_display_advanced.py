@@ -112,8 +112,8 @@ if __name__ == "__main__":
 
     timestampTo = int(time.time() * 1000)
     timestampFrom = timestampTo - (1000 * 50) # 50 seconds in the past
-    # deducting 3 seconds due to GOP (depends on camera settings). Idea: better to get a bit of video overlap then miss out a complete segmetn between I-farmes
-    middleTimestampTo = int(timestampFrom + ((timestampTo - timestampFrom) / 2)) - (10 * 1000) 
+    # deducting 2 seconds due to GOP (depends on camera settings). Idea: better to get a bit of video overlap then miss out a complete segment between I-farmes
+    middleTimestampTo = int(timestampFrom + ((timestampTo - timestampFrom) / 2)) - (2 * 1000) 
 
     # grpc connection to video-edge-ai-proxy
     channel = grpc_channel("127.0.0.1:50001")
