@@ -61,10 +61,10 @@ def video_process(queue, device,ts_from, ts_to, grpc_channel, process_number):
 
             img_count += 1
 
-    #         queue.put({"img":re_img, "process": process_number})
+            queue.put({"img":re_img, "process": process_number})
     print("image count: ", img_count)
     
-    # queue.put({"is_end":True, "process":process_number})
+    queue.put({"is_end":True, "process":process_number})
 
 # debug function, checkin if dislay smooth and looks fastforwarded without any glitches
 def display(num_processes):
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     for p in processes:
         p.start()
 
-    # display(len(processes))
+    display(len(processes))
 
     for p in processes:
         p.join()

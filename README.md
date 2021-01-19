@@ -110,7 +110,7 @@ Copy and paste `docker-compose.yml` to folder of your choice (recommended to be 
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.6
+    image: chryscloud/chrysedgeportal:0.0.7
     depends_on:
       - chrysedgeserver
       - redis
@@ -119,7 +119,7 @@ services:
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.6
+    image: chryscloud/chrysedgeserver:0.0.7
     restart: always
     depends_on:
       - redis
@@ -287,6 +287,26 @@ Run example to turn storage off for camera `test`:
 python storage_onoff.py --device test --on false
 ```
 
+### Running `opencv_inmemory_display.py`
+
+Prerequsite to have an in-memory queue is to setup `buffer -> in_memory` value in `conf.yaml` of your custom config. 
+
+This setting stores compressed video stream in memory and enables you to query the complete queue or portion of it. It also allows you to query the same queue (`timestamp_from` and `timestamp_to`) from parallel subprocess (check `examples/opencv_inmemory_display_advanced.py` for an example). 
+
+Wait for X amount of time for in-memory queue to fill up then run (for added camera named `test`):
+```
+python opencv_inmemory_display.py --device test
+```
+
+### Running `video_probe.py`
+
+This example shows gow to query local system time and retrieve information about the incoming video for specific camera/device.
+
+Run example to probe a video stream (for added camera named `test`):
+```
+python video_probe.py --device tet
+```
+
 # Custom configuration
 
 ## Custom redis configuration
@@ -311,7 +331,7 @@ Modify folders accordingly for **Mac OS X and Windows**
 Create `conf.yaml` file in `/data/chrysalis` folder. The configuration file is automatically picked up if it exists otherwise system fallbacks to it's default configuration.
 
 ```yaml
-version: 0.0.3
+version: 0.0.7
 title: Chrysalis Video Edge Proxy
 description: Chrysalis Video Edge Proxy Service for Computer Vision
 mode: release # "debug": or "release"
@@ -332,6 +352,7 @@ annotation:
 
 buffer:
   in_memory: 1 # number of images to store in memory buffer (1 = default)
+  in_memory_scale: "-1:-1" # scaling of the images. Examples: 400:-1 (keeps aspect radio with width 400), 400:300, iw/3:ih/3, ...)
   on_disk: false # store key-frame separated mp4 file segments to disk
   on_disk_folder: /data/chrysalis/archive # can be any custom folder you'd like to store video segments to
   on_disk_clean_older_than: "5m" # remove older mp4 segments than 5m
@@ -347,10 +368,10 @@ buffer:
 - `annotation -> poll_duration_ms`: poll every x miliseconds for batching purposes (default: 300ms)
 - `annotation -> max_match_size`: maximum number of annotation per batch size (default: 299)
 - `buffer -> in_memory`: number of decoded frames to store in memory per camera (default: 1)
+- `buffer -> in_memory_scale`: rescaling decoded images in memory buffer (default: `-1:-1`). Check [FFmpeg Scaling](https://trac.ffmpeg.org/wiki/Scaling)
 - `on_disk`: true/false, store key-frame chunked mp4 files to disk (default: false)
 - `on_disk_folder`: path to the folder where segments will be stored
 - `on_disk_clean_older_than`: remove mp4 segments older than (default: 5m)
-- `on_disk_schedule`: run disk cleanup scheduler cron job [#https://en.wikipedia.org/wiki/Cron](https://en.wikipedia.org/wiki/Cron)
 
 `on_disk` creates mp4 segments in format: `"current_timestamp in ms"_"duration_in_ms".mp4`. For example: `1600685088000_2000.mp4`
 
@@ -391,12 +412,12 @@ docker-compose build
 - [X] Add API key to Chrysalis Cloud for enable/disable storage
 - [X] Add configuration for in memory buffer pool of decoded image so they can be queried in the past
 - [X] Configuration and a cron job to store mp4 segments (1 per key-frame) from cameras and a cron job to clean old mp4 segments (rotating file buffer)
-- [ ] Add gRPC API to query in-memory buffer of images
+- [X] Add gRPC API to query in-memory buffer of images
 - [ ] Remote access Security (grpc TLS Client Authentication)
 - [ ] Remote access Security (TLS Client Authentication for web interface)
 - [ ] add RTMP container support (mutliple streams, same treatment as RTSP cams)
 - [ ] add v4l2 container support (e.g. Jetson Nano, Raspberry Pi?)
-- [ ] Initial web screen to pull images (RTSP, RTMP, V4l2)
+- [X] Initial web screen to pull images (RTSP, RTMP, V4l2)
 - [ ] Benchmark NVDEC,NVENC, VAAPI hardware decoders
 
 # Contributing
@@ -405,7 +426,7 @@ Please read `CONTRIBUTING.md` for details on our code of conduct, and the proces
 
 # Versioning
 
-Current version is initial release - v0.0.1 prerelease
+Current version is initial release - v0.0.7 prerelease
 
 # Authors
 

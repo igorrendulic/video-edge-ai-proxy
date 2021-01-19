@@ -35,8 +35,8 @@ fi
 if [ ! -z "$in_memory_buffer" ]; then
     cmd="$cmd --memory_buffer $in_memory_buffer"
 fi
-if [ ! -z "$in_memory_scame" ]; then
-    cmd="$cmd --memory_scale $in_memory_buffer"
+if [ ! -z "$in_memory_scale" ]; then
+    cmd="$cmd --memory_scale $in_memory_scale"
 fi
 if [ ! -z "$disk_buffer_path" ]; then
     cmd="$cmd --disk_path $disk_buffer_path"
