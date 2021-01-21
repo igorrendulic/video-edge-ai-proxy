@@ -15,22 +15,28 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/chryscloud/video-edge-ai-proxy/services"
+	"github.com/chryscloud/video-edge-ai-proxy/utils"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-resty/resty/v2"
 )
 
 type settingsHandler struct {
 	settingsManager *services.SettingsManager
+	apiClient       *resty.Client
 }
 
 func NewSettingsHandler(settingsManager *services.SettingsManager) *settingsHandler {
 	return &settingsHandler{
 		settingsManager: settingsManager,
+		apiClient:       resty.New(),
 	}
 }
 
@@ -53,6 +59,41 @@ func (sh *settingsHandler) Overwrite(c *gin.Context) {
 		AbortWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	// get settings first, because we might have gatewayID and registryID already stored
+	existingSettings, eErr := sh.settingsManager.Get()
+	if eErr != nil {
+		if eErr != badger.ErrKeyNotFound {
+			g.Log.Error("failed to retrieve existing settings from datastore", eErr)
+			AbortWithError(c, http.StatusInternalServerError, "Failed to retrieve settings from datastore")
+			return
+		}
+	}
+
+	queryParams := ""
+	if existingSettings != nil {
+		// queryParams += "?registryId=" + existingSettings.RegistryID + "&gatewayId=" + existingSettings.GatewayID
+	}
+
+	// validate settings with the Chrysalis Cloud
+	resp, apiErr := utils.CallAPIWithBody(sh.apiClient, "GET", g.Conf.API.Endpoint+"/api/v1/edge/credentials"+queryParams, "", settings.EdgeKey, settings.EdgeSecret)
+	if apiErr != nil {
+		g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)
+		AbortWithError(c, http.StatusUnauthorized, "Failed to validate credentials with Chryscloud")
+		return
+	}
+	var cloudResponse models.EdgeConnectCredentials
+	mErr := json.Unmarshal(resp, &cloudResponse)
+	if mErr != nil {
+		g.Log.Error("failed to unmarshal response from Chryscloud", mErr)
+		AbortWithError(c, http.StatusExpectationFailed, "Failed to unmarshal response from Chryscloud. Please upgrade Chrysalis Edge Proxy to latest version")
+		return
+	}
+	settings.ProjectID = cloudResponse.ProjectID
+	settings.RegistryID = cloudResponse.RegistryID
+	settings.GatewayID = cloudResponse.GatewayID
+	settings.Region = cloudResponse.Region
+	settings.PrivateRSAKey = cloudResponse.PrivateKeyPem
+
 	err := sh.settingsManager.Overwrite(&settings)
 	if err != nil {
 		AbortWithError(c, http.StatusInternalServerError, err.Error())
@@ -80,6 +121,7 @@ func (sh *settingsHandler) DockerImagesLocally(c *gin.Context) {
 	c.JSON(http.StatusOK, images)
 }
 
+// DockerPullImage pulls the docker image from the DockerHub to local machine
 func (sh *settingsHandler) DockerPullImage(c *gin.Context) {
 	name := c.Query("tag")
 	version := c.Query("version")

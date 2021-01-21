@@ -82,7 +82,7 @@ func (pm *ProcessManager) UpgradeRunningContainer(process *models.StreamProcess,
 
 	if runningContainer.ID == "" {
 		g.Log.Warn("container for process not found", process.Name, process.ImageTag, process.ContainerID)
-		return nil, ErrProcessNotFound
+		return nil, models.ErrProcessNotFound
 	}
 
 	// validate that the new version of image exists on disk
@@ -110,7 +110,7 @@ func (pm *ProcessManager) UpgradeRunningContainer(process *models.StreamProcess,
 	processBytes, err := pm.storage.Get(models.PrefixRTSPProcess, process.Name)
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
-			return nil, ErrProcessNotFound
+			return nil, models.ErrProcessNotFound
 		}
 		g.Log.Error("failed to retrieve process from datastore", err)
 		return nil, err

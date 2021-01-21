@@ -19,10 +19,11 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v7"
 )
 
 // ConfigAPI - configuring RESTapi services
-func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, settingsService *services.SettingsManager) *gin.Engine {
+func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, settingsService *services.SettingsManager, rdb *redis.Client) *gin.Engine {
 
 	// if g.Conf.CorsSubConfig.Enabled {
 	router.Use(cors.New(cors.Config{
@@ -33,7 +34,7 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 	}))
 
 	// APIs
-	processAPI := api.NewRTSPProcessHandler(processService, settingsService)
+	processAPI := api.NewRTSPProcessHandler(rdb, processService, settingsService)
 	settingsAPI := api.NewSettingsHandler(settingsService)
 
 	api := router.Group("/api/v1")

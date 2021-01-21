@@ -26,6 +26,7 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/globals"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/grpcapi"
+	"github.com/chryscloud/video-edge-ai-proxy/mqtt"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
 	r "github.com/chryscloud/video-edge-ai-proxy/router"
 	"github.com/chryscloud/video-edge-ai-proxy/services"
@@ -36,10 +37,10 @@ import (
 )
 
 var (
-	grpcServer    *grpc.Server
-	grpcConn      net.Listener
-	defaultDBPath = "/data/chrysalis"
-	// defaultDBPath = "/home/igor/Downloads"
+	grpcServer *grpc.Server
+	grpcConn   net.Listener
+	// defaultDBPath = "/data/chrysalis"
+	defaultDBPath = "/home/igor/Downloads"
 )
 
 func main() {
@@ -111,19 +112,21 @@ func main() {
 	// Services
 	settingsService := services.NewSettingsManager(storage)
 	processService := services.NewProcessManager(storage, rdb)
-	edgeService := services.NewEdgeService()
+	mqttService := mqtt.NewMqttManager(rdb, settingsService, processService)
+	mqttService.StartGatewayListener()
+	defer mqttService.StopGateway()
 
 	gin.SetMode(conf.Mode)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)
-	router = r.ConfigAPI(router, processService, settingsService)
+	router = r.ConfigAPI(router, processService, settingsService, rdb)
 
 	// start server
 	srv := msrv.Start(&conf.YamlConfig, router, g.Log)
 	// wait for server shutdown
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
-	go startGrpcServer(processService, settingsService, edgeService, rdb)
+	go startGrpcServer(processService, settingsService, rdb)
 	go shutdownGrpc(quit, done)
 
 	g.Log.Info("Server is ready to handle requests at", conf.Port)
@@ -137,7 +140,7 @@ func main() {
 	g.Log.Info("exit")
 }
 
-func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager, edgeService *services.EdgeService, rdb *redis.Client) error {
+func startGrpcServer(processService *services.ProcessManager, settingsService *services.SettingsManager, rdb *redis.Client) error {
 	conn, err := net.Listen("tcp", "0.0.0.0:50001") // TODO: take from conf.yaml file
 	if err != nil {
 		g.Log.Error("Failed to open grpc connection", err)
@@ -146,7 +149,7 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	grpcConn = conn
 	grpcServer = grpc.NewServer()
 
-	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, edgeService, rdb))
+	pb.RegisterImageServer(grpcServer, grpcapi.NewGrpcImageHandler(processService, settingsService, rdb))
 	g.Log.Info("Grpc Server is ready to handle requests at 50001")
 	return grpcServer.Serve(grpcConn)
 }
@@ -184,10 +187,14 @@ func setupRedis() (*redis.Client, error) {
 	var rdb *redis.Client
 	for i := 0; i < 3; i++ {
 		rdb = redis.NewClient(&redis.Options{
-			Addr:        g.Conf.Redis.Connection,
-			Password:    g.Conf.Redis.Password,
-			DB:          g.Conf.Redis.Database,
-			DialTimeout: time.Second * 15,
+			Addr:         g.Conf.Redis.Connection,
+			Password:     g.Conf.Redis.Password,
+			DB:           g.Conf.Redis.Database,
+			PoolSize:     10,
+			PoolTimeout:  time.Second * 30,
+			DialTimeout:  time.Second * 15,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
 		})
 
 		status := rdb.Ping()

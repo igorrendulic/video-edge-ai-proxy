@@ -9,8 +9,8 @@ import (
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
-	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/chryscloud/video-edge-ai-proxy/utils"
+	"github.com/go-resty/resty/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -35,7 +35,7 @@ func (gih *grpcImageHandler) Storage(ctx context.Context, req *pb.StorageRequest
 
 	apiErr := gih.enableDisableStorageAPICall(req.Start, info.RTMPEndpoint)
 	if apiErr != nil {
-		if apiErr == services.ErrForbidden {
+		if apiErr == models.ErrForbidden {
 			return nil, status.Errorf(codes.PermissionDenied, "permission denied")
 		}
 		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("cannot enable or disable storage on chrysalis cloud: %v", apiErr.Error()))
@@ -79,7 +79,8 @@ func (gih *grpcImageHandler) enableDisableStorageAPICall(storageOn bool, rtmpEnd
 		return errors.New("Can't find edge key and secret. Visit https://cloud.chryscloud.com to enable annotation and storage.")
 	}
 
-	_, apiErr := gih.edgeService.CallAPIWithBody("PUT", g.Conf.API.Endpoint+"/api/v1/edge/storage/"+key, input, edgeKey, edgeSecret)
+	apiClient := resty.New()
+	_, apiErr := utils.CallAPIWithBody(apiClient, "PUT", g.Conf.API.Endpoint+"/api/v1/edge/storage/"+key, input, edgeKey, edgeSecret)
 	if apiErr != nil {
 		g.Log.Error("failed to call Chrysalis Cloud API: ", apiErr)
 		return apiErr

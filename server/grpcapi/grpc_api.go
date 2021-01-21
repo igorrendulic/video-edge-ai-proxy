@@ -46,13 +46,12 @@ type grpcImageHandler struct {
 	deviceMap       sync.Map
 	processManager  *services.ProcessManager
 	settingsManager *services.SettingsManager
-	edgeService     *services.EdgeService
 	edgeKey         *string
 	msgQueue        rmq.Queue
 }
 
 // NewGrpcImageHandler returns main GRPC API handler
-func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager, edgeService *services.EdgeService, rdb *redis.Client) *grpcImageHandler {
+func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager, rdb *redis.Client) *grpcImageHandler {
 
 	// var rdb *redis.Client
 	// for i := 0; i < 3; i++ {
@@ -76,7 +75,7 @@ func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManage
 	msgQueue := conn.OpenQueue("annotationqueue")
 
 	// add batch listener (consumer) for annotatons
-	annotationConsumer := batch.NewAnnotationConsumer(0, settingsManager, edgeService, msgQueue)
+	annotationConsumer := batch.NewAnnotationConsumer(0, settingsManager, msgQueue)
 	msgQueue.StartConsuming(g.Conf.Annotation.UnackedLimit, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond)
 	msgQueue.AddBatchConsumerWithTimeout("annotationqueue", g.Conf.Annotation.MaxBatchSize, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond, annotationConsumer)
 
@@ -85,7 +84,6 @@ func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManage
 		deviceMap:       sync.Map{},
 		processManager:  processManager,
 		settingsManager: settingsManager,
-		edgeService:     edgeService,
 		msgQueue:        msgQueue,
 	}
 }

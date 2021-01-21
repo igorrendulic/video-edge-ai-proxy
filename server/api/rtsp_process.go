@@ -16,26 +16,31 @@ package api
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-redis/redis/v7"
 )
 
 type rtspProcessHandler struct {
 	processManager  *services.ProcessManager
 	settingsManager *services.SettingsManager
+	rdb             *redis.Client
 }
 
-func NewRTSPProcessHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager) *rtspProcessHandler {
+func NewRTSPProcessHandler(rdb *redis.Client, processManager *services.ProcessManager, settingsManager *services.SettingsManager) *rtspProcessHandler {
 	return &rtspProcessHandler{
 		processManager:  processManager,
 		settingsManager: settingsManager,
+		rdb:             rdb,
 	}
 }
 
@@ -74,6 +79,23 @@ func (ph *rtspProcessHandler) StartRTSP(c *gin.Context) {
 		g.Log.Warn("failed to start process ", deviceID, err)
 		AbortWithError(c, http.StatusConflict, err.Error())
 		return
+	}
+	// publish to chrysalis cloud the change
+	pubSubMsg := &models.MQTTMessage{
+		DeviceID:         deviceID,
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: models.MQTTProcessOperation(models.DeviceOperationStart),
+		ProcessType:      "RTSP",
+		Message:          "",
+	}
+	pubSubMsgBytes, imsgErr := json.Marshal(pubSubMsg)
+	if imsgErr != nil {
+		g.Log.Error("failed to publish redis internally", imsgErr)
+	} else {
+		rCmd := ph.rdb.Publish(models.RedisLocalMQTTChannel, string(pubSubMsgBytes))
+		if rCmd.Err() != nil {
+			g.Log.Error("failed to publish change to redis internally", rCmd.Err())
+		}
 	}
 	c.Status(http.StatusOK)
 }

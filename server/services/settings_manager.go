@@ -106,6 +106,12 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 	// curently only edgekey setting
 	settings.EdgeKey = new.EdgeKey
 	settings.EdgeSecret = new.EdgeSecret
+	settings.ProjectID = new.ProjectID
+	settings.GatewayID = new.GatewayID
+	settings.PrivateRSAKey = new.PrivateRSAKey
+	settings.Region = new.Region
+	settings.RegistryID = new.RegistryID
+
 	if settings.Created < 0 {
 		settings.Created = time.Now().Unix() * 1000
 	}
@@ -120,7 +126,9 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 	defer sm.mux.Unlock()
 	sm.current_edge_key = settings.EdgeKey
 	sm.current_edge_secret = settings.EdgeSecret
-	return sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
+	newSettings := sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
+
+	return newSettings
 }
 
 // Get settings from datastore

@@ -283,7 +283,7 @@ func (pm *ProcessManager) ListStream(ctx context.Context, found func(process *mo
 		info, err := pm.Info(proc.Name)
 		if err != nil {
 			g.Log.Warn("failed to load process", err)
-			if err == ErrProcessNotFound {
+			if err == models.ErrProcessNotFound {
 				continue
 			}
 			g.Log.Error("failed to get process info", err)
@@ -327,7 +327,7 @@ func (pm *ProcessManager) List() ([]*models.StreamProcess, error) {
 		info, err := pm.Info(proc.Name)
 		if err != nil {
 			g.Log.Warn("failed to load process", err)
-			if err == ErrProcessNotFound {
+			if err == models.ErrProcessNotFound {
 				// remove from the list and datastore
 				deleteProcesses = append(deleteProcesses, proc)
 				continue
@@ -356,7 +356,7 @@ func (pm *ProcessManager) Info(deviceID string) (*models.StreamProcess, error) {
 	if err != nil {
 		if dockerErrors.IsErrContainerNotFound(err) {
 			g.Log.Info("container not found to be stopeed", err)
-			return nil, ErrProcessNotFound
+			return nil, models.ErrProcessNotFound
 		}
 		g.Log.Error("failed to retrieve container", err)
 		return nil, err
@@ -372,7 +372,7 @@ func (pm *ProcessManager) Info(deviceID string) (*models.StreamProcess, error) {
 	sp, err := pm.storage.Get(models.PrefixRTSPProcess, deviceID)
 	if err != nil {
 		g.Log.Error("failed to find device with name", deviceID, err)
-		return nil, ErrProcessNotFoundDatastore
+		return nil, models.ErrProcessNotFoundDatastore
 	}
 	var status models.StreamProcess
 	err = json.Unmarshal(sp, &status)

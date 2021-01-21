@@ -8,23 +8,22 @@ import (
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	pb "github.com/chryscloud/video-edge-ai-proxy/proto"
 	"github.com/chryscloud/video-edge-ai-proxy/services"
+	"github.com/chryscloud/video-edge-ai-proxy/utils"
 	"github.com/go-resty/resty/v2"
 	"github.com/golang/protobuf/proto"
 )
 
 type AnnotationConsumer struct {
 	settingsService *services.SettingsManager
-	edgeService     *services.EdgeService
 	restClient      *resty.Client
 	msgQueue        rmq.Queue
 }
 
-func NewAnnotationConsumer(tag int, settingsService *services.SettingsManager, edgeService *services.EdgeService, msgQueue rmq.Queue) *AnnotationConsumer {
+func NewAnnotationConsumer(tag int, settingsService *services.SettingsManager, msgQueue rmq.Queue) *AnnotationConsumer {
 	restClient := resty.New().SetRetryCount(3)
 
 	ac := &AnnotationConsumer{
 		settingsService: settingsService,
-		edgeService:     edgeService,
 		restClient:      restClient,
 		msgQueue:        msgQueue,
 	}
@@ -87,7 +86,7 @@ func (ac *AnnotationConsumer) Consume(batch rmq.Deliveries) {
 	// 	return
 	// }
 
-	_, apiErr := ac.edgeService.CallAPIWithBody("POST", g.Conf.Annotation.Endpoint, sendPayload, apiKey, apiSecret)
+	_, apiErr := utils.CallAPIWithBody(ac.restClient, "POST", g.Conf.Annotation.Endpoint, sendPayload, apiKey, apiSecret)
 	if apiErr != nil {
 		g.Log.Error("error calling Edge Annotation API", apiErr)
 		batch.Reject()

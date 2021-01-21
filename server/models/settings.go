@@ -23,11 +23,16 @@ const (
 
 // Settings - keeping setting on the edge
 type Settings struct {
-	Name       string `json:"name"`                  // name of the setting
-	EdgeKey    string `json:"edge_key,omitempty"`    // edge key generated on Chrysalis Cloud
-	EdgeSecret string `json:"edge_secret,omitempty"` // edge secret key generated on Chrysalis Cloud
-	Created    int64  `json:"created,omitempty"`
-	Modified   int64  `json:"modified,omitempty"`
+	Name          string `json:"name"`                      // name of the setting
+	EdgeKey       string `json:"edge_key,omitempty"`        // edge key generated on Chrysalis Cloud
+	EdgeSecret    string `json:"edge_secret,omitempty"`     // edge secret key generated on Chrysalis Cloud
+	ProjectID     string `json:"project_id,omitempty"`      // Cloud project ID
+	Region        string `json:"region,omitempty"`          // Edge region
+	RegistryID    string `json:"registry_id,omitempty"`     // RegistryID
+	GatewayID     string `json:"gateway_id,omitempty"`      // gatewayID
+	PrivateRSAKey []byte `json:"private_rsa_key,omitempty"` // private RSA key for this gateway
+	Created       int64  `json:"created,omitempty"`
+	Modified      int64  `json:"modified,omitempty"`
 }
 
 // SettingsDockerTagVersion - current docker tag and version of the e.g. RTSP camera docker image

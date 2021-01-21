@@ -1,4 +1,4 @@
-package services
+package utils
 
 import (
 	"crypto/md5"
@@ -12,23 +12,11 @@ import (
 
 	microCrypto "github.com/chryscloud/go-microkit-plugins/crypto"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
+	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/go-resty/resty/v2"
 )
 
-type EdgeService struct {
-	apiClient *resty.Client
-}
-
-func NewEdgeService() *EdgeService {
-
-	apiClient := resty.New()
-
-	return &EdgeService{
-		apiClient: apiClient,
-	}
-}
-
-func (es *EdgeService) CallAPIWithBody(method string, fullEndpoint string, body interface{}, edgeKey, edgeSecret string) ([]byte, error) {
+func CallAPIWithBody(apiClient *resty.Client, method string, fullEndpoint string, body interface{}, edgeKey, edgeSecret string) ([]byte, error) {
 
 	payload, err := json.Marshal(body)
 	if err != nil {
@@ -43,7 +31,7 @@ func (es *EdgeService) CallAPIWithBody(method string, fullEndpoint string, body 
 	signPayload := current_ts + contentMD5
 	mac := microCrypto.ComputeHmac(sha256.New, signPayload, edgeSecret)
 
-	req := es.apiClient.R().SetHeader("X-ChrysEdge-Auth", edgeKey+":"+mac).
+	req := apiClient.R().SetHeader("X-ChrysEdge-Auth", edgeKey+":"+mac).
 		SetHeader("X-Chrys-Date", current_ts).
 		SetHeader("Content-MD5", contentMD5).SetBody(body)
 	resp, sndErr := req.Execute(method, fullEndpoint)
@@ -57,7 +45,7 @@ func (es *EdgeService) CallAPIWithBody(method string, fullEndpoint string, body 
 	}
 	if resp.StatusCode() == 403 || resp.StatusCode() == 401 {
 		g.Log.Error("invalid response code from chrysalis API: ", resp.StatusCode(), string(resp.Body()))
-		return nil, ErrForbidden
+		return nil, models.ErrForbidden
 	}
 
 	return nil, errors.New(fmt.Sprintf("invalid response code from chrysalis API: %d, %v", resp.StatusCode(), string(resp.Body())))
