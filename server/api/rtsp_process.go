@@ -81,22 +81,8 @@ func (ph *rtspProcessHandler) StartRTSP(c *gin.Context) {
 		return
 	}
 	// publish to chrysalis cloud the change
-	pubSubMsg := &models.MQTTMessage{
-		DeviceID:         deviceID,
-		Created:          time.Now().UTC().Unix() * 1000,
-		ProcessOperation: models.MQTTProcessOperation(models.DeviceOperationStart),
-		ProcessType:      "RTSP",
-		Message:          "",
-	}
-	pubSubMsgBytes, imsgErr := json.Marshal(pubSubMsg)
-	if imsgErr != nil {
-		g.Log.Error("failed to publish redis internally", imsgErr)
-	} else {
-		rCmd := ph.rdb.Publish(models.RedisLocalMQTTChannel, string(pubSubMsgBytes))
-		if rCmd.Err() != nil {
-			g.Log.Error("failed to publish change to redis internally", rCmd.Err())
-		}
-	}
+	ph.mqttLocalPublish(deviceID, models.MQTTProcessOperation(models.DeviceOperationAdd), models.ProcessTypeRTSP, "")
+
 	c.Status(http.StatusOK)
 }
 
@@ -116,6 +102,10 @@ func (ph *rtspProcessHandler) FindRTSPUpgrades(c *gin.Context) {
 		g.Log.Error("failed finding image upgrades", err)
 		AbortWithError(c, http.StatusInternalServerError, err.Error())
 		return
+	}
+	// publish to chrysalis cloud the change
+	for _, upgr := range upgrades {
+		ph.mqttLocalPublish(upgr.Name, models.MQTTProcessOperation(models.DeviceOperationUpgradeAvailable), models.ProcessTypeRTSP, "")
 	}
 
 	c.JSON(http.StatusOK, upgrades)
@@ -149,6 +139,9 @@ func (ph *rtspProcessHandler) UpgradeContainer(c *gin.Context) {
 		AbortWithError(c, http.StatusConflict, err.Error())
 		return
 	}
+	// publish to chrysalis cloud the change
+	ph.mqttLocalPublish(process.Name, models.MQTTProcessOperation(models.DeviceOperationAdd), models.ProcessTypeRTSP, "")
+
 	c.JSON(http.StatusOK, newProc)
 }
 
@@ -164,6 +157,8 @@ func (ph *rtspProcessHandler) Stop(c *gin.Context) {
 		AbortWithError(c, http.StatusConflict, err.Error())
 		return
 	}
+	// publish to chrysalis cloud the change
+	ph.mqttLocalPublish(deviceID, models.MQTTProcessOperation(models.DeviceOperationRemove), models.ProcessTypeRTSP, "")
 	c.Status(http.StatusOK)
 }
 
@@ -188,4 +183,25 @@ func (ph *rtspProcessHandler) List(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, processes)
+}
+
+// mqttLocalPublish publishing to redis pub/sub to be then forwarded to Chrysalis Cloud over MQTT protocol
+func (ph *rtspProcessHandler) mqttLocalPublish(deviceID string, operation models.MQTTProcessOperation, processType string, message string) {
+	// publish to chrysalis cloud the change
+	pubSubMsg := &models.MQTTMessage{
+		DeviceID:         deviceID,
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: operation,
+		ProcessType:      models.MQTTProcessType(processType),
+		Message:          message,
+	}
+	pubSubMsgBytes, imsgErr := json.Marshal(pubSubMsg)
+	if imsgErr != nil {
+		g.Log.Error("failed to publish redis internally", imsgErr)
+	} else {
+		rCmd := ph.rdb.Publish(models.RedisLocalMQTTChannel, string(pubSubMsgBytes))
+		if rCmd.Err() != nil {
+			g.Log.Error("failed to publish change to redis internally", rCmd.Err())
+		}
+	}
 }

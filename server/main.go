@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	cfg "github.com/chryscloud/go-microkit-plugins/config"
@@ -40,13 +41,15 @@ var (
 	grpcServer *grpc.Server
 	grpcConn   net.Listener
 	// defaultDBPath = "/data/chrysalis"
-	defaultDBPath = "/home/igor/Downloads"
+	defaultDBPath = "/home/igor/Downloads/temp/chrysedge/data"
 )
 
 func main() {
 	// server wait to shutdown monitoring channels
 	done := make(chan bool, 1)
 	quit := make(chan os.Signal, 1)
+
+	quitGrpc := make(chan os.Signal, 1)
 
 	// check if configuration file exists
 	var conf g.Config
@@ -89,8 +92,11 @@ func main() {
 	}
 	g.Conf = conf
 
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(quit)
+
+	signal.Notify(quitGrpc, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(quitGrpc)
 
 	db, err := setupDB()
 	if err != nil {
@@ -127,7 +133,7 @@ func main() {
 	go msrv.Shutdown(srv, g.Log, quit, done)
 
 	go startGrpcServer(processService, settingsService, rdb)
-	go shutdownGrpc(quit, done)
+	go shutdownGrpc(quitGrpc)
 
 	g.Log.Info("Server is ready to handle requests at", conf.Port)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -136,7 +142,6 @@ func main() {
 
 	<-done
 
-	grpcConn.Close()
 	g.Log.Info("exit")
 }
 
@@ -154,14 +159,17 @@ func startGrpcServer(processService *services.ProcessManager, settingsService *s
 	return grpcServer.Serve(grpcConn)
 }
 
-func shutdownGrpc(quit <-chan os.Signal, done chan<- bool) {
+func shutdownGrpc(quit <-chan os.Signal) {
 	<-quit
+
+	grpcConn.Close()
+
 	if grpcServer != nil {
 		g.Log.Info("stopping grpc server...")
-		grpcServer.GracefulStop()
+		grpcServer.Stop()
 	}
-	close(done)
-	g.Log.Info("stopping grpc server...")
+	g.Log.Info("grpc server quit")
+	os.Exit(0)
 }
 
 // setup local badge datastore

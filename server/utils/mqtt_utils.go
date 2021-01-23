@@ -74,7 +74,7 @@ func publishTelemetry(gatewayID string, client qtt.Client, qos int, mqttMsg *mod
 		g.Log.Error("failed to marshal mqtt message", err)
 		return err
 	}
-	if token := client.Publish(telemetry, 1, false, mqttBytes); token.WaitTimeout(time.Second*5) && token.Error() != nil {
+	if token := client.Publish(telemetry, 1, true, mqttBytes); token.WaitTimeout(time.Second*5) && token.Error() != nil {
 		g.Log.Info("failed to publish initial gateway payload", token.Error())
 		return token.Error()
 	}
