@@ -27,6 +27,7 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.edgeService.getSettings().subscribe(sett => {
+      console.log("settings: ", sett);
       this.settings = sett;
       this.settingsForm.get('edge_key').setValue(sett.edge_key);
       this.settingsForm.get('edge_secret').setValue(sett.edge_secret);
