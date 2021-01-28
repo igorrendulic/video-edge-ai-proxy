@@ -75,6 +75,8 @@ func (sh *settingsHandler) Overwrite(c *gin.Context) {
 	}
 
 	// validate settings with the Chrysalis Cloud
+	// TODO: send the hardware settings of this edge
+
 	resp, apiErr := utils.CallAPIWithBody(sh.apiClient, "GET", g.Conf.API.Endpoint+"/api/v1/edge/credentials"+queryParams, "", settings.EdgeKey, settings.EdgeSecret)
 	if apiErr != nil {
 		g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)

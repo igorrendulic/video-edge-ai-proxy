@@ -48,9 +48,27 @@ func (mqtt *mqttManager) onConnect(client qtt.Client) {
 }
 
 func (mqtt *mqttManager) onMessage(client qtt.Client, msg qtt.Message) {
-	// TODO: commands should come in here
-	g.Log.Info("Topic:", msg.Topic())
-	g.Log.Info("Message: ", string(msg.Payload()))
+	g.Log.Info("Command received from Chrysalis Cloud:", msg.Topic())
+
+	var edgeConfig models.EdgeCommandPayload
+	err := json.Unmarshal(msg.Payload(), &edgeConfig)
+	if err != nil {
+		g.Log.Error("failed to unmarshal config payload", err, string(msg.Payload()))
+		return
+	}
+	operation := ""
+	if edgeConfig.Operation == "a" {
+		operation = models.DeviceOperationStart
+	} else if edgeConfig.Operation == "r" {
+		operation = models.DeviceOperationDelete
+	} else {
+		g.Log.Error("command operation not supported: ", edgeConfig.Name, edgeConfig.ImageTag, edgeConfig.Operation)
+		return
+	}
+	err = utils.PublishToRedis(mqtt.rdb, edgeConfig.Name, models.MQTTProcessOperation(operation), edgeConfig.Type, msg.Payload())
+	if err != nil {
+		g.Log.Error("failed to process starting of the new device on the edge", err)
+	}
 }
 
 func (mqtt *mqttManager) onConnectionLost(client qtt.Client, err error) {
@@ -58,8 +76,7 @@ func (mqtt *mqttManager) onConnectionLost(client qtt.Client, err error) {
 }
 
 func (mqtt *mqttManager) configHandler(client qtt.Client, msg qtt.Message) {
-	// TODO: update config here
-	g.Log.Info("Topic:", msg.Topic())
+	g.Log.Info("Received config request: ", msg.Topic())
 	g.Log.Info("Message: ", string(msg.Payload()))
 }
 
@@ -123,7 +140,7 @@ func (mqtt *mqttManager) run() error {
 				if err != nil {
 					g.Log.Error("failed to unmarshal internal redis pubsub message", err)
 				} else {
-					g.Log.Info("Received message object from redis pubsub for mqtt: ", localMsg)
+					g.Log.Info("Received message object from redis pubsub for mqtt: ", localMsg.DeviceID)
 					var opErr error
 					if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationAdd) {
 
@@ -139,6 +156,13 @@ func (mqtt *mqttManager) run() error {
 					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationUpgradeFinished) {
 						// TODO: TBD
 						g.Log.Warn("TBD: process operation upgrade completed/finished")
+					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationStart) {
+
+						opErr = mqtt.StartCamera(localMsg.Message)
+					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationDelete) {
+
+						opErr = mqtt.StopCamera(localMsg.Message)
+
 					} else {
 						opErr = errors.New("local message operation not recognized")
 						g.Log.Error("message operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)

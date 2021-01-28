@@ -122,6 +122,9 @@ func main() {
 	mqttService.StartGatewayListener()
 	defer mqttService.StopGateway()
 
+	hwService := services.NewHardwareService()
+	go hwService.GetMemory()
+
 	gin.SetMode(conf.Mode)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)

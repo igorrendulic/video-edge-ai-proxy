@@ -10,6 +10,7 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/dgrijalva/jwt-go"
 	qtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/go-redis/redis/v7"
 )
 
 // CreateJWT creates RS265 JWT signed token
@@ -94,4 +95,28 @@ func AttachDeviceToGateway(gatewayID string, client qtt.Client, mqttMsg *models.
 // Dettaching a device requires qos = 2
 func DetachGatewayDevice(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
 	return publishTelemetry(gatewayID, client, 2, mqttMsg)
+}
+
+// mqttLocalPublish publishing to redis pub/sub to be then forwarded to Chrysalis Cloud over MQTT protocol
+func PublishToRedis(rdb *redis.Client, deviceID string, operation models.MQTTProcessOperation, processType string, customMessage []byte) error {
+	// publish to chrysalis cloud the change
+	pubSubMsg := &models.MQTTMessage{
+		DeviceID:         deviceID,
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: operation,
+		ProcessType:      models.MQTTProcessType(processType),
+		Message:          customMessage,
+	}
+	pubSubMsgBytes, imsgErr := json.Marshal(pubSubMsg)
+	if imsgErr != nil {
+		g.Log.Error("failed to publish redis internally", imsgErr)
+		return imsgErr
+	} else {
+		rCmd := rdb.Publish(models.RedisLocalMQTTChannel, string(pubSubMsgBytes))
+		if rCmd.Err() != nil {
+			g.Log.Error("failed to publish change to redis internally", rCmd.Err())
+			return rCmd.Err()
+		}
+	}
+	return nil
 }
