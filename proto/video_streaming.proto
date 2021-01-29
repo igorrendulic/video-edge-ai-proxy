@@ -145,7 +145,7 @@ message StorageResponse {
     bool start = 2;
 }
 
-// VideoCodec information about the stream
+// Video information about the stream
 message VideoCodec {
     string name = 1;
     int32 width = 2;
@@ -154,6 +154,9 @@ message VideoCodec {
     bytes extradata = 5;
     int32 extradata_size = 6;
     string long_name = 7;
+    int64 inmemory_start_timestamp = 8;
+    int64 inmemory_end_timestamp = 9;
+    int64 inmemory_duration = 10;
 }
 
 message VideoProbeRequest {

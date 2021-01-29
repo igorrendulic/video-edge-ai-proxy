@@ -40,6 +40,9 @@ def setCodecInfo(redis_conn, in_av_container):
                 vc.pix_fmt = codec_ctx.pix_fmt
                 vc.extradata = codec_ctx.extradata
                 vc.extradata_size = codec_ctx.extradata_size
+                vc.inmemory_start_timestamp = codec_ctx.inmemory_start_timestamp
+                vc.inmemory_end_timestamp = codec_ctx.inmemory_end_timestamp
+                vc.inmemory_duration = codec_ctx.inmemory_duration
 
                 vcData = vc.SerializeToString()
                 redis_conn.set(RedisCodecVideoInfo, vcData)
@@ -71,6 +74,8 @@ def packetToInMemoryBuffer(redis_conn,memory_buffer_size, device_id,in_av_contai
                 packetBytes = packet.to_bytes()
                 codec_name = codec_ctx.name
                 pix_fmt = codec_ctx.pix_fmt
+                inmemory_start_timestamp = int(packet.pts * float(packet.time_base))
+                inmemory_end_timestamp = int(packet.dts * float(packet.time_base))
 
                 vf = video_streaming_pb2.VideoFrame()
                 vf.data = packetBytes
@@ -85,6 +90,9 @@ def packetToInMemoryBuffer(redis_conn,memory_buffer_size, device_id,in_av_contai
                 vf.is_corrupt = packet.is_corrupt
                 vf.codec_name = codec_name
                 vf.pix_fmt = pix_fmt
+                vf.inmemory_start_timestamp = inmemory_start_timestamp
+                vf.inmemory_end_timestamp = inmemory_end_timestamp
+                vf.inmemory_duration = inmemory_end_timestamp - inmemory_start_timestamp
 
                 vfData = vf.SerializeToString()
                 keyframe = 0
