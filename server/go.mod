@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/adjust/rmq/v2 v2.0.0-20200523123200-98c5e969f342
-	github.com/chryscloud/go-microkit-plugins v1.0.6
+	github.com/chryscloud/go-microkit-plugins v1.0.7
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

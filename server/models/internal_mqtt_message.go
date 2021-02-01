@@ -7,6 +7,7 @@ const (
 	DeviceOperationAdd    string = "add"    // add device
 	DeviceOperationRemove string = "remove" // remove device
 	DeviceOperationState  string = "state"  // the current state of device
+	DeviceOperationStats  string = "stats"  // device stats (host system and each device)
 
 	DeviceOperationStart  string = "start"  // start a new device on the edge
 	DeviceOperationDelete string = "delete" // delete the device from the edge
@@ -16,6 +17,7 @@ const (
 
 	ProcessTypeRTSP        string = "rtsp"
 	ProcessTypeApplication string = "app"
+	ProcessTypeStats       string = "stats"
 	ProcessTypeUnknown     string = "unknown"
 )
 
@@ -27,7 +29,7 @@ type MQTTMessage struct {
 	RTMPEndpoint     string               `json:"rtmpEndpoint,omitempty"`   // possible rtmp endpoint
 	RTSPConnection   string               `json:"rtspConnection,omitempty"` // rtspConnection string
 	ProcessOperation MQTTProcessOperation `json:"operation"`                // the state of the internal process
-	ProcessType      MQTTProcessType      `json:"type,omitempty"`           // type of internal process (currently only for device -> aka camera)
+	ProcessType      MQTTProcessType      `json:"type,omitempty"`           // type of internal process
 	State            string               `json:"state,omitempty"`          // process state (running, restarting, ...)
 	Message          []byte               `json:"message,omitempty"`        // optional custom message
 }

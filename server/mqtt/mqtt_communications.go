@@ -175,8 +175,8 @@ func (mqtt *mqttManager) run() error {
 		}
 	}(sub)
 
-	// report gateway state every 60 seconds
-	delay := time.Second * 60
+	// report gateway state every 5 minutes
+	delay := time.Minute * 5
 	go func() {
 		for {
 			err := mqtt.gatewayState(mqtt.gatewayID)
@@ -192,6 +192,30 @@ func (mqtt *mqttManager) run() error {
 		}
 	}()
 
+	// reporting very first container stats right after first 10 seconds (sort of a ground trouth)
+	time.AfterFunc(time.Second*10, func() {
+		err := mqtt.ReportContainersStats()
+		if err != nil {
+			g.Log.Error("failed to retrieve all device stats", err)
+		}
+	})
+
+	// report system wide info every 5 minutes
+	sysDelay := time.Minute * 5
+	go func() {
+		for {
+			select {
+			case <-time.After(sysDelay):
+				err := mqtt.ReportContainersStats()
+				if err != nil {
+					g.Log.Error("failed to retrieve all device stats", err)
+				}
+			case <-mqtt.stop:
+				g.Log.Info("Syscron stopped")
+				return
+			}
+		}
+	}()
 	return nil
 }
 

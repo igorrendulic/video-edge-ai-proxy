@@ -26,7 +26,9 @@ import (
 	dockerhub "github.com/chryscloud/go-microkit-plugins/dockerhub"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
+	"github.com/chryscloud/video-edge-ai-proxy/utils"
 	"github.com/dgraph-io/badger/v2"
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/go-version"
 )
 
@@ -36,12 +38,14 @@ type SettingsManager struct {
 	current_edge_key    string
 	current_edge_secret string
 	mux                 *sync.RWMutex
+	apiClient           *resty.Client
 }
 
 func NewSettingsManager(storage *Storage) *SettingsManager {
 	return &SettingsManager{
-		storage: storage,
-		mux:     &sync.RWMutex{},
+		storage:   storage,
+		mux:       &sync.RWMutex{},
+		apiClient: resty.New(),
 	}
 }
 
@@ -60,6 +64,33 @@ func (sm *SettingsManager) GetCurrentEdgeKeyAndSecret() (string, string, error) 
 		sm.current_edge_secret = settings.EdgeSecret
 	}
 	return sm.current_edge_key, sm.current_edge_secret, nil
+}
+
+// Used on systm start, calling cloud to connect to (and refresh possible keys, cert, ...)
+func (sm *SettingsManager) UpdateEdgeRegistrationToCloud() error {
+	defaultSettings, err := sm.getDefault()
+	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			return nil
+		}
+		g.Log.Error("failed to query for settings in datastore", err)
+		return err
+	}
+
+	// if not connected to edge there is nothing to do
+	if defaultSettings.EdgeKey == "" || defaultSettings.EdgeSecret == "" {
+		return nil
+	}
+
+	// get system info
+	sysInfo, err := sm.GetSystemInfo()
+	if err != nil {
+		g.Log.Error("failed to retrieve system info", err)
+		return err
+	}
+
+	_, err = sm.updateSettingsWithMQTTCredentials(sysInfo, defaultSettings)
+	return err
 }
 
 // getDefault - retrieves settings if exist, otherwise creates new empty settings
@@ -97,20 +128,59 @@ func (sm *SettingsManager) getDefault() (*models.Settings, error) {
 }
 
 // Overwrite always overwrites the complete settings
-func (sm *SettingsManager) Overwrite(new *models.Settings) error {
-	settings, err := sm.getDefault()
+func (sm *SettingsManager) Overwrite(settings *models.Settings) (*models.Settings, error) {
+	existingSettings, _ := sm.getDefault()
+
+	// get system info
+	sysInfo, err := sm.GetSystemInfo()
 	if err != nil {
-		g.Log.Error("failed to retrieve default settings", err)
-		return err
+		g.Log.Error("failed to retrieve system info", err)
+		return nil, err
 	}
+
+	if existingSettings != nil {
+		sysInfo.GatewayID = existingSettings.GatewayID
+		sysInfo.RegistryID = existingSettings.RegistryID
+	}
+
+	updSettings, err := sm.updateSettingsWithMQTTCredentials(sysInfo, settings)
+	if err != nil {
+		g.Log.Error("failed to update settings", err)
+		return nil, err
+	}
+
+	return updSettings, nil
+}
+
+func (sm *SettingsManager) updateSettingsWithMQTTCredentials(sysInfo *models.SystemInfo, settings *models.Settings) (*models.Settings, error) {
+	// validate settings with the Chrysalis Cloud
+	resp, apiErr := utils.CallAPIWithBody(sm.apiClient, "POST", g.Conf.API.Endpoint+"/api/v1/edge/credentials", sysInfo, settings.EdgeKey, settings.EdgeSecret)
+	if apiErr != nil {
+		g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)
+		// AbortWithError(c, http.StatusUnauthorized, "Failed to validate credentials with Chryscloud")
+		return nil, apiErr
+	}
+	var cloudResponse models.EdgeConnectCredentials
+	mErr := json.Unmarshal(resp, &cloudResponse)
+	if mErr != nil {
+		g.Log.Error("failed to unmarshal response from Chryscloud", mErr)
+		// AbortWithError(c, http.StatusExpectationFailed, "Failed to unmarshal response from Chryscloud. Please upgrade Chrysalis Edge Proxy to latest version")
+		return nil, mErr
+	}
+	settings.ProjectID = cloudResponse.ProjectID
+	settings.RegistryID = cloudResponse.RegistryID
+	settings.GatewayID = cloudResponse.GatewayID
+	settings.Region = cloudResponse.Region
+	settings.PrivateRSAKey = cloudResponse.PrivateKeyPem
+
 	// curently only edgekey setting
-	settings.EdgeKey = new.EdgeKey
-	settings.EdgeSecret = new.EdgeSecret
-	settings.ProjectID = new.ProjectID
-	settings.GatewayID = new.GatewayID
-	settings.PrivateRSAKey = new.PrivateRSAKey
-	settings.Region = new.Region
-	settings.RegistryID = new.RegistryID
+	// settings.EdgeKey = settings.EdgeKey
+	// settings.EdgeSecret = new.EdgeSecret
+	settings.ProjectID = cloudResponse.ProjectID
+	settings.GatewayID = cloudResponse.GatewayID
+	settings.PrivateRSAKey = cloudResponse.PrivateKeyPem
+	settings.Region = cloudResponse.Region
+	settings.RegistryID = cloudResponse.RegistryID
 
 	if settings.Created < 0 {
 		settings.Created = time.Now().Unix() * 1000
@@ -120,15 +190,15 @@ func (sm *SettingsManager) Overwrite(new *models.Settings) error {
 	settingsBytes, err := json.Marshal(settings)
 	if err != nil {
 		g.Log.Error("failed to marshal settings", err)
-		return err
+		return nil, err
 	}
 	sm.mux.Lock()
 	defer sm.mux.Unlock()
 	sm.current_edge_key = settings.EdgeKey
 	sm.current_edge_secret = settings.EdgeSecret
-	newSettings := sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
+	newSettingsErr := sm.storage.Put(models.PrefixSettingsKey, settings.Name, settingsBytes)
 
-	return newSettings
+	return settings, newSettingsErr
 }
 
 // Get settings from datastore
@@ -264,4 +334,28 @@ func (sm *SettingsManager) findHighestVersion(versionsRaw []string) *version.Ver
 		return versions[len(versions)-1]
 	}
 	return nil
+}
+
+// getting dockers host system info
+func (sm *SettingsManager) GetSystemInfo() (*models.SystemInfo, error) {
+	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+
+	sys, _, err := cl.SystemWideInfo()
+	if err != nil {
+		g.Log.Error("Failed to get host system info", err)
+		return nil, err
+	}
+	systemInfo := &models.SystemInfo{
+		Architecture:  sys.Architecture,
+		NCPUs:         sys.NCPU,
+		TotalMemory:   sys.MemTotal,
+		Name:          sys.Name,
+		ID:            sys.ID,
+		KernelVersion: sys.KernelVersion,
+		OSType:        sys.OSType,
+		OS:            sys.OperatingSystem,
+		DockerVersion: sys.ServerVersion,
+	}
+
+	return systemInfo, nil
 }

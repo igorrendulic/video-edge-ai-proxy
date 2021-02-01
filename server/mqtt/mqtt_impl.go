@@ -69,7 +69,7 @@ func (mqtt *mqttManager) gatewayState(gatewayID string) error {
 
 	g.Log.Info("Gateway state reported", time.Now())
 
-	// TODO: report also changes of all the stream processes to events (find diff)
+	// report changes of all the stream processes to events (find diff)
 	allDevices, err := mqtt.processService.List()
 	if err != nil {
 		g.Log.Error("failed to list all devices", err)

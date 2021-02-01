@@ -49,6 +49,9 @@ export class SettingsComponent implements OnInit {
     this.settings.edge_secret = this.settingsForm.get('edge_secret').value;
 
     this.edgeService.overwriteSettings(this.settings).subscribe(ret => {
+      
+      this.settings = ret;
+
     }, error => {
       this.errorMessage = error.message;
       console.error(error);

@@ -122,8 +122,11 @@ func main() {
 	mqttService.StartGatewayListener()
 	defer mqttService.StopGateway()
 
-	hwService := services.NewHardwareService()
-	go hwService.GetMemory()
+	err = settingsService.UpdateEdgeRegistrationToCloud()
+	if err != nil {
+		// not the error but don't prevent start of the chrys edge
+		g.Log.Warn("failed to register with chrysalis cloud", err)
+	}
 
 	gin.SetMode(conf.Mode)
 

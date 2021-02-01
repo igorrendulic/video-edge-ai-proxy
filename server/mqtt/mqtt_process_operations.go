@@ -8,6 +8,7 @@ import (
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
+	"github.com/chryscloud/video-edge-ai-proxy/utils"
 )
 
 // Removes a camera from the edge
@@ -122,5 +123,43 @@ func (mqtt *mqttManager) StartCamera(configPayload []byte) error {
 		return err
 	}
 
+	return nil
+}
+
+// Report to the cloud all container stats in one go
+func (mqtt *mqttManager) ReportContainersStats() error {
+
+	sett, err := mqtt.settingsService.Get()
+	if err != nil {
+		g.Log.Error("failed to get default settings", err)
+		return err
+	}
+	if sett.GatewayID == "" || sett.RegistryID == "" {
+		g.Log.Error("failed to report full system stats, gatewayID or registryID in settings missing", sett.GatewayID, sett.RegistryID)
+		return errors.New("missing gateway or report id in settings")
+	}
+	procStats, err := mqtt.processService.StatsAllProcesses(sett)
+	if err != nil {
+		g.Log.Error("failed to retrieve all process stats", err)
+		return err
+	}
+
+	statsBytes, err := json.Marshal(procStats)
+	if err != nil {
+		g.Log.Error("failed to marshalall process streams to report to cloud", err)
+		return err
+	}
+
+	mqttMsg := &models.MQTTMessage{
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: models.MQTTProcessOperation(models.DeviceOperationStats),
+		ProcessType:      models.MQTTProcessType(models.ProcessTypeStats),
+		Message:          statsBytes,
+	}
+	pErr := utils.PublishMonitoringTelemetry(sett.GatewayID, (*mqtt.client), mqttMsg)
+	if pErr != nil {
+		g.Log.Error("Failed to publish monitoring telemetry", pErr)
+		return pErr
+	}
 	return nil
 }
