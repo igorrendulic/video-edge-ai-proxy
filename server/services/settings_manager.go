@@ -154,6 +154,12 @@ func (sm *SettingsManager) Overwrite(settings *models.Settings) (*models.Setting
 
 func (sm *SettingsManager) updateSettingsWithMQTTCredentials(sysInfo *models.SystemInfo, settings *models.Settings) (*models.Settings, error) {
 	// validate settings with the Chrysalis Cloud
+
+	if settings.GatewayID != "" && settings.RegistryID != "" {
+		sysInfo.GatewayID = settings.GatewayID
+		sysInfo.RegistryID = settings.RegistryID
+	}
+
 	resp, apiErr := utils.CallAPIWithBody(sm.apiClient, "POST", g.Conf.API.Endpoint+"/api/v1/edge/credentials", sysInfo, settings.EdgeKey, settings.EdgeSecret)
 	if apiErr != nil {
 		g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)
@@ -174,8 +180,6 @@ func (sm *SettingsManager) updateSettingsWithMQTTCredentials(sysInfo *models.Sys
 	settings.PrivateRSAKey = cloudResponse.PrivateKeyPem
 
 	// curently only edgekey setting
-	// settings.EdgeKey = settings.EdgeKey
-	// settings.EdgeSecret = new.EdgeSecret
 	settings.ProjectID = cloudResponse.ProjectID
 	settings.GatewayID = cloudResponse.GatewayID
 	settings.PrivateRSAKey = cloudResponse.PrivateKeyPem
