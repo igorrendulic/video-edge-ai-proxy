@@ -175,8 +175,24 @@ func (mqtt *mqttManager) run() error {
 		}
 	}(sub)
 
-	// report gateway state every 5 minutes
-	delay := time.Minute * 5
+	deviceStateDelay := time.Second * 15
+	go func() {
+		for {
+			err := mqtt.changedDeviceState(mqtt.gatewayID)
+			if err != nil {
+				g.Log.Error("failed to check device state changes", err)
+			}
+			select {
+			case <-time.After(deviceStateDelay):
+			case <-mqtt.stop:
+				g.Log.Info("Device state change job stopped")
+				return
+			}
+		}
+	}()
+
+	// report gateway state 60 seconds
+	delay := time.Second * 60
 	go func() {
 		for {
 			err := mqtt.gatewayState(mqtt.gatewayID)

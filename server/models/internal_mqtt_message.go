@@ -4,10 +4,11 @@ type MQTTProcessOperation string
 type MQTTProcessType string
 
 const (
-	DeviceOperationAdd    string = "add"    // add device
-	DeviceOperationRemove string = "remove" // remove device
-	DeviceOperationState  string = "state"  // the current state of device
-	DeviceOperationStats  string = "stats"  // device stats (host system and each device)
+	DeviceOperationAdd      string = "add"       // add device
+	DeviceOperationRemove   string = "remove"    // remove device
+	DeviceOperationState    string = "state"     // the current state of device
+	DeviceOperationStats    string = "stats"     // device stats (host system and each device)
+	GatewayOperationCheckIn string = "gwcheckin" // gateway checkin
 
 	DeviceOperationStart  string = "start"  // start a new device on the edge
 	DeviceOperationDelete string = "delete" // delete the device from the edge

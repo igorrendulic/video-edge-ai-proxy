@@ -56,19 +56,8 @@ func (mqtt *mqttManager) gatewaySubscribers() error {
 	return nil
 }
 
-// GatewayState reporting gateway state to ChrysalisCloud
-func (mqtt *mqttManager) gatewayState(gatewayID string) error {
-
-	gatewayStateTopic := fmt.Sprintf("/devices/%s/state", gatewayID)
-	gatewayInitPayload := fmt.Sprintf("%d", time.Now().Unix())
-
-	if token := (*mqtt.client).Publish(gatewayStateTopic, 1, false, gatewayInitPayload); token.Wait() && token.Error() != nil {
-		g.Log.Error("failed to publish initial gateway payload", token.Error())
-		return token.Error()
-	}
-
-	g.Log.Info("Gateway state reported", time.Now())
-
+// detecting device state change and reporting if changes occured
+func (mqtt *mqttManager) changedDeviceState(gatewayID string) error {
 	// report changes of all the stream processes to events (find diff)
 	allDevices, err := mqtt.processService.List()
 	if err != nil {
@@ -117,6 +106,32 @@ func (mqtt *mqttManager) gatewayState(gatewayID string) error {
 			}
 			mqtt.latestDeviceState[device.Name] = device
 		}
+	}
+	return nil
+}
+
+// GatewayState reporting gateway state to ChrysalisCloud (the way for entire gateway to check in)
+func (mqtt *mqttManager) gatewayState(gatewayID string) error {
+
+	// report state to coreiot (this can be removed also)
+	gatewayStateTopic := fmt.Sprintf("/devices/%s/state", gatewayID)
+	gatewayInitPayload := fmt.Sprintf("%d", time.Now().Unix())
+
+	if token := (*mqtt.client).Publish(gatewayStateTopic, 1, false, gatewayInitPayload); token.Wait() && token.Error() != nil {
+		g.Log.Error("failed to publish initial gateway payload", token.Error())
+		return token.Error()
+	}
+
+	// report state to chrysalis cloud
+	g.Log.Info("Gateway state reported", time.Now())
+	mqttMsg := &models.MQTTMessage{
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: models.MQTTProcessOperation(models.GatewayOperationCheckIn),
+	}
+	pErr := utils.PublishMonitoringTelemetry(gatewayID, (*mqtt.client), mqttMsg)
+	if pErr != nil {
+		g.Log.Error("Failed to publish monitoring telemetry", pErr)
+		return pErr
 	}
 
 	return nil
