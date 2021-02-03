@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.7.2
+    image: chryscloud/chrysedgeportal:0.0.7.3
     build: web/
     depends_on:
       - chrysedgeserver
@@ -11,12 +11,13 @@ services:
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.7.2
+    image: chryscloud/chrysedgeserver:0.0.7.3
     build: server/
     restart: always
     depends_on:
       - redis
     entrypoint: /app/main
+    # command: " -c /data/chrysalis/conf.yaml" # optional argument if not in data root folder of /data/chrysalis volume
     ports:
       - "8909:8909"
       - "50001:50001"

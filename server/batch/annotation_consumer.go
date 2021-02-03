@@ -80,41 +80,12 @@ func (ac *AnnotationConsumer) Consume(batch rmq.Deliveries) {
 	sendPayload := ai.AnnotationList{
 		Data: aiAnnotations,
 	}
-	// payload, err := json.Marshal(sendPayload)
-	// if err != nil {
-	// 	g.Log.Error("invalid annotation json format", err)
-	// 	return
-	// }
 
 	_, apiErr := utils.CallAPIWithBody(ac.restClient, "POST", g.Conf.Annotation.Endpoint, sendPayload, apiKey, apiSecret)
 	if apiErr != nil {
 		g.Log.Error("error calling Edge Annotation API", apiErr)
 		batch.Reject()
 	}
-
-	// h := md5.New()
-	// h.Write(payload)
-	// contentMD5 := hex.EncodeToString(h.Sum(nil))
-	// current_ts := strconv.FormatInt(time.Now().Unix()*1000, 10)
-	// signPayload := current_ts + contentMD5
-	// mac := microCrypto.ComputeHmac(sha256.New, signPayload, apiSecret)
-
-	// resp, sndErr := ac.restClient.R().SetHeader("X-ChrysEdge-Auth", apiKey+":"+mac).
-	// 	SetHeader("X-Chrys-Date", current_ts).
-	// 	SetHeader("Content-MD5", contentMD5).SetBody(sendPayload).Post(g.Conf.Annotation.Endpoint)
-
-	// if sndErr != nil {
-	// 	g.Log.Error("failed to send annotations to remote api", sndErr)
-	// 	batch.Reject()
-	// 	return
-	// }
-	// if resp.StatusCode() >= 200 && resp.StatusCode() <= 300 {
-	// 	g.Log.Info("succesfully processed annotation batch of size", len(aiAnnotations), " out of ", len(batch))
-	// } else {
-	// 	g.Log.Error("failed sending annotations: ", resp.StatusCode(), string(resp.Body()))
-	// 	batch.Reject()
-	// 	return
-	// }
 
 	batch.Ack()
 }

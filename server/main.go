@@ -15,6 +15,7 @@
 package main
 
 import (
+	"flag"
 	"net"
 	"net/http"
 	"os"
@@ -45,6 +46,19 @@ var (
 )
 
 func main() {
+	// configuration file optional path. Default:  current dir with  filename conf.yaml
+	var (
+		configFile string
+	)
+	flag.StringVar(&configFile, "c", "", "Configuration file path.")
+	flag.StringVar(&configFile, "config", "", "Configuration file path.")
+	flag.Usage = usage
+	flag.Parse()
+
+	if configFile == "" {
+		configFile = defaultDBPath + "/conf.yaml"
+	}
+
 	// server wait to shutdown monitoring channels
 	done := make(chan bool, 1)
 	quit := make(chan os.Signal, 1)
@@ -53,7 +67,7 @@ func main() {
 
 	// check if configuration file exists
 	var conf g.Config
-	if _, err := os.Stat(defaultDBPath + "/conf.yaml"); os.IsNotExist(err) {
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		// config file does not exist
 		conf = g.Config{
 			YamlConfig: cfg.YamlConfig{
@@ -224,4 +238,14 @@ func setupRedis() (*redis.Client, error) {
 		break
 	}
 	return rdb, nil
+}
+
+// usage will print out the flag options for the server.
+func usage() {
+	usageStr := `Usage: monitor [options]
+	Server Options:
+	-c, --config <file>              Configuration file path
+`
+	g.Log.Warn(usageStr)
+	os.Exit(0)
 }
