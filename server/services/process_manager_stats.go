@@ -76,8 +76,8 @@ func (pm *ProcessManager) StatsAllProcesses(sett *models.Settings) (*models.AllS
 		procStats := &models.ProcessStats{
 			Name:        process.Name,
 			ImageTag:    process.ImageTag,
-			Cpu:         int(calculated.CPUPercent * 100),
-			Memory:      int(calculated.MemoryPercent) * 100,
+			Cpu:         int(calculated.CPUPercent),
+			Memory:      int(calculated.MemoryPercent),
 			NetworkRx:   int64(calculated.NetworkRx),
 			NetworkTx:   int64(calculated.NetworkTx),
 			NumRestarts: restartCount,
