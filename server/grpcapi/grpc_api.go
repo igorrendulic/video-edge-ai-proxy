@@ -142,6 +142,8 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 	// defer streamCancel()
 	streamContext := context.Background()
 
+	failedContinousRequests := 0
+
 	for {
 
 		select {
@@ -155,7 +157,11 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
-			g.Log.Error("failed to retrieve gprc image request", err)
+			g.Log.Warn("failed to retrieve gprc image request", err)
+			if failedContinousRequests > 5 {
+				return nil
+			}
+			failedContinousRequests++
 			continue
 		}
 
@@ -237,6 +243,7 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 		if errStr := stream.Send(vf); errStr != nil {
 			g.Log.Error("grp live image send error", errStr)
 		}
+		failedContinousRequests = 0
 	}
 }
 
