@@ -187,7 +187,9 @@ func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageSe
 		}
 
 		// loading VideoFrame from redis
-		vf := &pb.VideoFrame{}
+		vf := &pb.VideoFrame{
+			DeviceId: streamName,
+		}
 
 		// check where we left off for device/streamName
 		lastTs := "0"
