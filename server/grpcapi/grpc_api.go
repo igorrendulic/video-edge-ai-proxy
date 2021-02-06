@@ -137,9 +137,10 @@ func (gih *grpcImageHandler) ListStreams(req *pb.ListStreamRequest, stream pb.Im
 // VideoLatestImage - bidirectional connection with client continously sending live video image
 func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageServer) error {
 
-	clientDeadline := time.Now().Add(time.Duration(15) * time.Second)
-	streamContext, streamCancel := context.WithDeadline(stream.Context(), clientDeadline)
-	defer streamCancel()
+	// clientDeadline := time.Now().Add(time.Duration(15) * time.Second)
+	// streamContext, streamCancel := context.WithDeadline(stream.Context(), clientDeadline)
+	// defer streamCancel()
+	streamContext := context.Background()
 
 	for {
 
