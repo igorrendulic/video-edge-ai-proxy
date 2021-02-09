@@ -29,6 +29,7 @@ const (
 	RedisInMemoryBufferChannel       = "memory_buffer_channel" // pub/sub channel to communicate with python process in order to start decoding frames in the memory buffer
 	RedisInMemoryDecodedImagesPrefix = "memory_decoded_"
 	RedisInMemoryIFrameListPrefix    = "memory_iframe_list_"
+	RedisInMemoryQueue               = "in_memory_queue_"
 
 	// video codec info
 	RedisCodecVideoInfo = "codec_video_info"

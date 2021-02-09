@@ -1,37 +1,29 @@
 # video-edge-ai-proxy
 
-**Currently this repository is under active development!**
-
-The ultimate video pipeline for Computer Vision.
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/chryscloud/video-edge-ai-proxy) 
 
 Video Edge-AI Proxy ingests multiple RTSP camera streams and provides a common interface for conducting AI operations on or near the Edge.
 
+
 ## Why use Video Edge-AI Proxy?
 
-video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras onto a single more powerful computer. For example, a network of CCTV RTSP enabled cameras can be accessed through a simple GRPC interface, where Machine Learning algorithms can do various Computer Vision tasks. Furthermore, interesting footage can be annotated, selectively streamed and stored through a simple API for later analysis, computer vision tasks in the cloud or enriching the Machine Learning training samples.
+video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras onto a single more powerful computer. 
+
+For example, a network of CCTV RTSP enabled cameras can be accessed through a simple GRPC interface, where Machine Learning algorithms can do various Computer Vision tasks. Furthermore, interesting footage can be annotated, selectively streamed and stored through a simple API for later analysis, computer vision tasks in the cloud or enriching the Machine Learning training samples.
 
 <p align="center">
     <img src="https://storage.googleapis.com/chrysaliswebassets/chrysalis-video-edge-ai-proxy.png" title="Chrysalis Cloud" />
 <p align="center">
 
-## Features
+## Documentation
 
-- **RTSP camera hub** - User interface and RESTful API for setting up multiple RTSP cameras
-- **Connection management** - handles cases of internet outages or camera streaming problems
-- **Stream management** - deals with the complexities of stream management
-- **Video/Image Hub** - processing of images from multiple camera sources simultaneously
-- **Optimized** - optimized for processing multiple camera streams in parallel
-- **Selective Frames** - can read I-Frames (Keyframes) or Frames within any time interval (skipping decoding of packets when possible)
-- **Selective Pass-Through** - selective streamin (start/stop) for preserving bandwidth
-- **Selective Pass-Through-Storage** - on and off switch for storing a portion of a stream forwarded to Chrysalis Cloud
-- **Machine Learning Annotation** - asynchronous annotations for live video streams
+You can find more extensive documentation [here](https://chryscloud.github.io/api_doc/)
 
 ## Contents
 
 * [Prerequisites](#prerequisites)
 * [Quick Start](#quick-start)
-* [Portal usage](#portal-usage)
-* [Client usage](#client-usage)
+* [Usage](#usage)
 * [Examples](#examples)
   * [Prerequisites](#example-prerequisites)
   * [Running basic_usage.py](#example-prerequisites)
@@ -50,43 +42,7 @@ video-edge-ai-proxy is an easy to use collection mechanism from multiple cameras
 - [Docker](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-#### Enable docker TCP socket connection
-
-***Linux based systems only***
-
-`This settings are not required if you running on Mac OS X and Windows. Only make sure that docker-compose and docker are updated to the latest versions`.
-
-Create `daemon.json` file in `/etc/docker` folder with JSON contents:
-```json
-{
-  "hosts": [
-    "fd://",
-    "unix:///var/run/docker.sock"
-  ]
-}
-```
-
-Create a new file `/etc/systemd/system/docker.service.d/docker.conf` with the following contents:
-```
-[Service]
-ExecStart=
-ExecStart=/usr/bin/dockerd
-```
-
-Reload daemon:
-```
-sudo systemctl daemon-reload
-```
-
-Restart docker
-```
-sudo service docker restart
-```
-
-You can test out if the configuration is correct by issuing curl request docker socket:
-```
-curl -s --unix-socket /var/run/docker.sock http://dummy/images/json | jq '.'
-```
+Read specific configuration options [here](https://chryscloud.github.io/api_doc/edge-proxy/getting-started/prerequisites/)
 
 ## Quick Start
 
@@ -98,72 +54,31 @@ By default video-edge-ai-proxy requires these ports:
 
 Make sure before your run it that these ports are available.
 
-For **Mac OS X and Windows 10** update your Docker desktop to latest version.
+```
+curl -O https://raw.githubusercontent.com/chryscloud/api_doc/master/install-chrysedge.sh
 
-If running on **Mac OS X** make sure to modify `/data/chrysalis` to a more Mac OS friendly folder e.g. `/Users/usename/data` under `chrysedgeserver` -> `volumes`. 
+# Give exec permission
+chmod 777 install-chrysedge.sh
 
-If running on **Windows 10** make sure to modify `/data/chrysalis` to your custom windows folder to e.g. `c:/Users/user/chrys-video-egde-proxy/data` under `chrysedgeserver` -> `volumes`. Create the folder first. On Windows latest Docker Desktop version must have  `WSL integration` enabled in settings. 
-
-Create a directory: `/data/chrysalis` or for Mac OS X: `/Users/usename/data`
-
-Copy and paste `docker-compose.yml` to folder of your choice (recommended to be different than /data/chrysalis):
-
-```yml
-version: '3.8'
-services:
-  chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.7
-    depends_on:
-      - chrysedgeserver
-      - redis
-    ports:
-      - "8905:8905"
-    networks:
-      - chrysnet
-  chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.7
-    restart: always
-    depends_on:
-      - redis
-    entrypoint: /app/main
-    ports:
-      - "8909:8909"
-      - "50001:50001"
-    volumes:
-      - /data/chrysalis:/data/chrysalis
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks: 
-      - chrysnet
-  redis:
-    image: "redis:alpine"
-    ports:
-      - "6379:6379"
-    # volumes:
-    #   - /data/chrysalis/redis:/data
-    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
-    # command:
-    #   - redis-server
-    #   - /usr/local/etc/redis/redis.conf
-  
-    networks: 
-      - chrysnet
-
-networks:
-  chrysnet:
-    name: chrysnet
+# run installation script
+./install-chrysedge.sh
 ```
 
-Start video-edge-ai-proxy:
-```bash
-docker-compose pull
-docker-compose up -d --no-build
-```
+Start the docker images:
 
-(Currently H.264 support only)
+```python
+docker-compose up
+
+# or to run it in daemon mode:
+
+docker-compose up -d
+```
 
 Open browser and visit `chrysalisportal` at address: `http://localhost:8905`
 
-## Portal usage
+For installation outside of WSL 2 on Windows please check manuall installation steps [here](https://chryscloud.github.io/api_doc/edge-proxy/getting-started/quick-start/#manual-installation)
+
+## Usage
 
 Open your browser and go to: `http://localhost:8905`
 
@@ -185,10 +100,6 @@ Click on the newly created connection and check the output and error log. Expect
 <p align="center">
 
 We're ready to consume frames from RTSP camera. Check the `/examples` folder.
-
-## Client usage
-
-At this point you should have the video-edge-ai-proxy up and running and your first connection to RTSP camera made.
 
 ## Examples
 
@@ -311,21 +222,6 @@ python video_probe.py --device tet
 
 # Custom configuration
 
-## Custom redis configuration
-
-Default configuration is in the root folder of this project: `./redis.conf`
-
-1. Update default `redis.conf` in the root directory of this project
-2. Uncomment volumes section in redis config
-```yaml   
-    # volumes:
-    #   - /data/chrysalis/redis:/data
-    #   - ./redis.conf:/usr/local/etc/redis/redis.conf
-    # command:
-    #   - redis-server
-    #   - /usr/local/etc/redis/redis.conf
-```
-
 Modify folders accordingly for **Mac OS X and Windows**
 
 ## Custom Chrysalis configuration
@@ -333,7 +229,7 @@ Modify folders accordingly for **Mac OS X and Windows**
 Create `conf.yaml` file in `/data/chrysalis` folder. The configuration file is automatically picked up if it exists otherwise system fallbacks to it's default configuration.
 
 ```yaml
-version: 0.0.7
+version: 0.0.1
 title: Chrysalis Video Edge Proxy
 description: Chrysalis Video Edge Proxy Service for Computer Vision
 mode: release # "debug": or "release"
@@ -354,7 +250,7 @@ annotation:
 
 buffer:
   in_memory: 1 # number of images to store in memory buffer (1 = default)
-  in_memory_scale: "-1:-1" # scaling of the images. Examples: 400:-1 (keeps aspect radio with width 400), 400:300, iw/3:ih/3, ...)
+  in_memory_scale: "iw:ih" # scaling of the images. Examples: 400:-1 (keeps aspect radio with width 400), 400:300, iw/3:ih/3, ...)
   on_disk: false # store key-frame separated mp4 file segments to disk
   on_disk_folder: /data/chrysalis/archive # can be any custom folder you'd like to store video segments to
   on_disk_clean_older_than: "5m" # remove older mp4 segments than 5m
@@ -397,12 +293,8 @@ Create the folder if it doesn't exist and make sure it's writtable by docker pro
 
 In case you cloned this repository you can run docker-compose with build command. 
 `Start video-edge-ai-proxy` with local build:
-```bash
-docker-compose up -d
-```
 
-or 
-```
+```bash
 docker-compose build
 ```
 
@@ -428,7 +320,7 @@ Please read `CONTRIBUTING.md` for details on our code of conduct, and the proces
 
 # Versioning
 
-Current version is initial release - v0.0.7 prerelease
+Current version is initial release - v0.0.8 prerelease
 
 # Authors
 

@@ -14,7 +14,7 @@ class ImageStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.VideoLatestImage = channel.stream_stream(
+        self.VideoLatestImage = channel.unary_unary(
                 '/chrys.cloud.videostreaming.v1beta1.Image/VideoLatestImage',
                 request_serializer=video__streaming__pb2.VideoFrameRequest.SerializeToString,
                 response_deserializer=video__streaming__pb2.VideoFrame.FromString,
@@ -59,7 +59,7 @@ class ImageStub(object):
 class ImageServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def VideoLatestImage(self, request_iterator, context):
+    def VideoLatestImage(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -110,7 +110,7 @@ class ImageServicer(object):
 
 def add_ImageServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'VideoLatestImage': grpc.stream_stream_rpc_method_handler(
+            'VideoLatestImage': grpc.unary_unary_rpc_method_handler(
                     servicer.VideoLatestImage,
                     request_deserializer=video__streaming__pb2.VideoFrameRequest.FromString,
                     response_serializer=video__streaming__pb2.VideoFrame.SerializeToString,
@@ -161,7 +161,7 @@ class Image(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def VideoLatestImage(request_iterator,
+    def VideoLatestImage(request,
             target,
             options=(),
             channel_credentials=None,
@@ -171,7 +171,7 @@ class Image(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoLatestImage',
+        return grpc.experimental.unary_unary(request, target, '/chrys.cloud.videostreaming.v1beta1.Image/VideoLatestImage',
             video__streaming__pb2.VideoFrameRequest.SerializeToString,
             video__streaming__pb2.VideoFrame.FromString,
             options, channel_credentials,

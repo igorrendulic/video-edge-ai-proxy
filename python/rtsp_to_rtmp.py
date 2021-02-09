@@ -81,7 +81,7 @@ class RTSPtoRTMP(threading.Thread):
                     # self.in_audio_stream = self.in_container.streams.audio[0]
 
                 # set codec context in redis
-                setCodecInfo(self.redis_conn, self.in_container)
+                setCodecInfo(self.redis_conn, self.in_container, self.device_id)
 
                 # init mp4 local archive
                 if self._disk_path is not None:

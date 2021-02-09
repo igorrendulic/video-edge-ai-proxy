@@ -36,7 +36,7 @@ def gen_image_request(device_name, keyframe_only):
     req = video_streaming_pb2.VideoFrameRequest()
     req.device_id = device_name
     req.key_frame_only = keyframe_only
-    yield req
+    return req
 
 def draw_labels_and_boxes(img, boxes, confidences, classids, idxs, colors, labels):
     # If there are any detections
@@ -159,37 +159,28 @@ if __name__ == "__main__":
     
     while True:
         prev = int(time.time() * 1000)
-        for frame in stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=args.keyframe)):
-            # read raw frame data and convert to numpy array
-            img_bytes = frame.data 
-            re_img = np.frombuffer(img_bytes, dtype=np.uint8)
+        frame = stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=args.keyframe))
+        # read raw frame data and convert to numpy array
+        img_bytes = frame.data 
+        re_img = np.frombuffer(img_bytes, dtype=np.uint8)
 
-            # reshape image back into original dimensions
-            if len(frame.shape.dim) > 0:
-                reshape = tuple([int(dim.size) for dim in frame.shape.dim])
-                re_img = np.reshape(re_img, reshape)
+        # reshape image back into original dimensions
+        if len(frame.shape.dim) > 0:
+            reshape = tuple([int(dim.size) for dim in frame.shape.dim])
+            re_img = np.reshape(re_img, reshape)
 
-                height, width = re_img.shape[:2]
+            height, width = re_img.shape[:2]
 
-                re_img, boxes, confidences, classids, idxs = infer_image(net, layer_names, \
-		    						height, width, re_img, colors, labels, boxes, confidences, classids, idxs, infer=True)
+            re_img, boxes, confidences, classids, idxs = infer_image(net, layer_names, \
+                                height, width, re_img, colors, labels, boxes, confidences, classids, idxs, infer=True)
 
-                # if count == 0:
-                #     re_img, boxes, confidences, classids, idxs = infer_image(net, layer_names, \
-                #                 height, width, re_img, colors, labels)
-                #     count += 1
-                # else:
-                #     re_img, boxes, confidences, classids, idxs = infer_image(net, layer_names, \
-		    	# 					height, width, re_img, colors, labels, boxes, confidences, classids, idxs, infer=False)
-                #     count = (count + 1) % 6
+            # add camera name
+            cv.namedWindow('box', cv.WINDOW_NORMAL)
+            cv.resizeWindow('box', 1024,768)
+            cv.setWindowTitle('box', args.device) 
+            cv.imshow('box', re_img)
+            
+            if cv.waitKey(1) & 0xFF == ord('q'):
+                break
 
-                # add camera name
-                cv.namedWindow('box', cv.WINDOW_NORMAL)
-                cv.resizeWindow('box', 1024,768)
-                cv.setWindowTitle('box', args.device) 
-                cv.imshow('box', re_img)
-                
-                if cv.waitKey(1) & 0xFF == ord('q'):
-                    break
-    
-    cv2.destroyWindow('box')
+cv2.destroyWindow('box')

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -46,6 +47,11 @@ var (
 )
 
 func main() {
+	numCPUS := runtime.NumCPU()
+	if numCPUS > 1 {
+		numCPUS -= 1
+	}
+	runtime.GOMAXPROCS(numCPUS)
 	// configuration file optional path. Default:  current dir with  filename conf.yaml
 	var (
 		configFile string
@@ -214,6 +220,7 @@ func setupDB() (*badger.DB, error) {
 func setupRedis() (*redis.Client, error) {
 	var rdb *redis.Client
 	for i := 0; i < 3; i++ {
+
 		rdb = redis.NewClient(&redis.Options{
 			Addr:         g.Conf.Redis.Connection,
 			Password:     g.Conf.Redis.Password,

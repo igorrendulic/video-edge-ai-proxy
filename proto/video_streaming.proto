@@ -161,7 +161,16 @@ message VideoProbeRequest {
 }
 
 message VideoProbeResponse {
-    VideoCodec video_codec = 2;
+    VideoCodec video_codec = 1;
+    VideoBuffer buffer = 2;
+}
+
+message VideoBuffer {
+    int64 start_time = 1;
+    int64 end_time = 2;
+    int64 duration_seconds = 3;
+    int32 approximate_fps = 4;
+    int64 frames = 5;
 }
 
 message SystemTimeResponse {
@@ -170,7 +179,7 @@ message SystemTimeResponse {
 message SystemTimeRequest {}
 
 service Image {
-    rpc VideoLatestImage(stream VideoFrameRequest) returns (stream VideoFrame) {}
+    rpc VideoLatestImage(VideoFrameRequest) returns (VideoFrame) {}
     rpc VideoBufferedImage(VideoFrameBufferedRequest) returns (stream VideoFrame) {}
     rpc VideoProbe(VideoProbeRequest) returns (VideoProbeResponse) {}
     rpc ListStreams(ListStreamRequest) returns (stream ListStream) {}

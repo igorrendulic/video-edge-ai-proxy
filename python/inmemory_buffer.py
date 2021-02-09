@@ -22,7 +22,7 @@ def memoryCleanup(redis_conn, device_id):
     redis_conn.delete(RedisInMemoryIFrameListPrefix+device_id) # all keys for stored i-frames
     redis_conn.delete(RedisInMemoryDecodedImagesPrefix+device_id) # all decoded in-memory buffer images
 
-def setCodecInfo(redis_conn, in_av_container):
+def setCodecInfo(redis_conn, in_av_container,deviceId):
     '''
     Sets the current streams codec info at the same time clean out the in memory redis queues
     '''
@@ -42,14 +42,14 @@ def setCodecInfo(redis_conn, in_av_container):
                 vc.extradata_size = codec_ctx.extradata_size
 
                 vcData = vc.SerializeToString()
-                redis_conn.set(RedisCodecVideoInfo, vcData)
+                redis_conn.set(RedisCodecVideoInfo+deviceId, vcData)
 
 
-def getCodecInfo(redis_conn):
+def getCodecInfo(redis_conn, deviceId):
     '''
     Reading the current video stream codec info from redis
     '''
-    info = redis_conn.get(RedisCodecVideoInfo)
+    info = redis_conn.get(RedisCodecVideoInfo+deviceId)
     if info is not None:
         vc = video_streaming_pb2.VideoCodec()
         vc.ParseFromString(info)
@@ -109,10 +109,10 @@ class InMemoryBuffer(threading.Thread):
 
     def run(self):
 
-        codec_info = getCodecInfo(self.__redis_conn)
+        codec_info = getCodecInfo(self.__redis_conn, self.__device_id)
 
         while codec_info is None:
-            codec_info = getCodecInfo(self.__redis_conn)
+            codec_info = getCodecInfo(self.__redis_conn, self.__device_id)
             time.sleep(0.1)
 
 

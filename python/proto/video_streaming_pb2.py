@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x15video_streaming.proto\x12\"chrys.cloud.videostreaming.v1beta1\"\xd2\x06\n\x0f\x41nnotateRequest\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\x12\x15\n\rend_timestamp\x18\x05 \x01(\x03\x12\x13\n\x0bobject_type\x18\x06 \x01(\t\x12\x11\n\tobject_id\x18\x07 \x01(\t\x12\x1a\n\x12object_tracking_id\x18\x08 \x01(\t\x12\x12\n\nconfidence\x18\t \x01(\x01\x12J\n\x12object_bouding_box\x18\n \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.BoudingBox\x12>\n\x08location\x18\x0b \x01(\x0b\x32,.chrys.cloud.videostreaming.v1beta1.Location\x12I\n\x11object_coordinate\x18\x0c \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12<\n\x04mask\x18\r \x03(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12\x18\n\x10object_signature\x18\x0e \x03(\x01\x12\x10\n\x08ml_model\x18\x0f \x01(\t\x12\x18\n\x10ml_model_version\x18\x10 \x01(\t\x12\r\n\x05width\x18\x11 \x01(\x05\x12\x0e\n\x06height\x18\x12 \x01(\x05\x12\x13\n\x0bis_keyframe\x18\x13 \x01(\x08\x12\x12\n\nvideo_type\x18\x14 \x01(\t\x12\x18\n\x10offset_timestamp\x18\x15 \x01(\x03\x12\x17\n\x0foffset_duration\x18\x16 \x01(\x03\x12\x17\n\x0foffset_frame_id\x18\x17 \x01(\x03\x12\x18\n\x10offset_packet_id\x18\x18 \x01(\x03\x12\x15\n\rcustom_meta_1\x18\x19 \x01(\t\x12\x15\n\rcustom_meta_2\x18\x1a \x01(\t\x12\x15\n\rcustom_meta_3\x18\x1b \x01(\t\x12\x15\n\rcustom_meta_4\x18\x1c \x01(\t\x12\x15\n\rcustom_meta_5\x18\x1d \x01(\t\"h\n\x10\x41nnotateResponse\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\"$\n\x08Location\x12\x0b\n\x03lat\x18\x01 \x01(\x01\x12\x0b\n\x03lon\x18\x02 \x01(\x01\"-\n\nCoordinate\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"F\n\nBoudingBox\x12\x0b\n\x03top\x18\x01 \x01(\x05\x12\x0c\n\x04left\x18\x02 \x01(\x05\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\"p\n\nShapeProto\x12?\n\x03\x64im\x18\x02 \x03(\x0b\x32\x32.chrys.cloud.videostreaming.v1beta1.ShapeProto.Dim\x1a!\n\x03\x44im\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\"\xe2\x02\n\nVideoFrame\x12\r\n\x05width\x18\x01 \x01(\x03\x12\x0e\n\x06height\x18\x02 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\x12\x13\n\x0bis_keyframe\x18\x05 \x01(\x08\x12\x0b\n\x03pts\x18\x06 \x01(\x03\x12\x0b\n\x03\x64ts\x18\x07 \x01(\x03\x12\x12\n\nframe_type\x18\x08 \x01(\t\x12\x12\n\nis_corrupt\x18\t \x01(\x08\x12\x11\n\ttime_base\x18\n \x01(\x01\x12=\n\x05shape\x18\x0b \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.ShapeProto\x12\x11\n\tdevice_id\x18\x0c \x01(\t\x12\x0e\n\x06packet\x18\r \x01(\x03\x12\x10\n\x08keyframe\x18\x0e \x01(\x03\x12\x11\n\textradata\x18\x0f \x01(\x0c\x12\x12\n\ncodec_name\x18\x10 \x01(\t\x12\x0f\n\x07pix_fmt\x18\x11 \x01(\t\">\n\x11VideoFrameRequest\x12\x16\n\x0ekey_frame_only\x18\x01 \x01(\x08\x12\x11\n\tdevice_id\x18\x02 \x01(\t\"\\\n\x19VideoFrameBufferedRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0etimestamp_from\x18\x02 \x01(\x03\x12\x14\n\x0ctimestamp_to\x18\x03 \x01(\x03\"\xde\x01\n\nListStream\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0e\x66\x61iling_streak\x18\x03 \x01(\x03\x12\x15\n\rhealth_status\x18\x04 \x01(\t\x12\x0c\n\x04\x64\x65\x61\x64\x18\x05 \x01(\x08\x12\x11\n\texit_code\x18\x06 \x01(\x03\x12\x0b\n\x03pid\x18\x07 \x01(\x05\x12\x0f\n\x07running\x18\x08 \x01(\x08\x12\x0e\n\x06paused\x18\t \x01(\x08\x12\x12\n\nrestarting\x18\n \x01(\x08\x12\x11\n\toomkilled\x18\x0b \x01(\x08\x12\r\n\x05\x65rror\x18\x0c \x01(\t\"\x13\n\x11ListStreamRequest\"6\n\x0cProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bpassthrough\x18\x02 \x01(\x08\"7\n\rProxyResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bpassthrough\x18\x02 \x01(\x08\"2\n\x0eStorageRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x08\"3\n\x0fStorageResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x08\"\x88\x01\n\nVideoCodec\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\x12\x0f\n\x07pix_fmt\x18\x04 \x01(\t\x12\x11\n\textradata\x18\x05 \x01(\x0c\x12\x16\n\x0e\x65xtradata_size\x18\x06 \x01(\x05\x12\x11\n\tlong_name\x18\x07 \x01(\t\"&\n\x11VideoProbeRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"Y\n\x12VideoProbeResponse\x12\x43\n\x0bvideo_codec\x18\x02 \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.VideoCodec\"*\n\x12SystemTimeResponse\x12\x14\n\x0c\x63urrent_time\x18\x01 \x01(\x03\"\x13\n\x11SystemTimeRequest2\xe9\x07\n\x05Image\x12\x7f\n\x10VideoLatestImage\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoFrameRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00(\x01\x30\x01\x12\x87\x01\n\x12VideoBufferedImage\x12=.chrys.cloud.videostreaming.v1beta1.VideoFrameBufferedRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00\x30\x01\x12}\n\nVideoProbe\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoProbeRequest\x1a\x36.chrys.cloud.videostreaming.v1beta1.VideoProbeResponse\"\x00\x12x\n\x0bListStreams\x12\x35.chrys.cloud.videostreaming.v1beta1.ListStreamRequest\x1a..chrys.cloud.videostreaming.v1beta1.ListStream\"\x00\x30\x01\x12w\n\x08\x41nnotate\x12\x33.chrys.cloud.videostreaming.v1beta1.AnnotateRequest\x1a\x34.chrys.cloud.videostreaming.v1beta1.AnnotateResponse\"\x00\x12n\n\x05Proxy\x12\x30.chrys.cloud.videostreaming.v1beta1.ProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x12t\n\x07Storage\x12\x32.chrys.cloud.videostreaming.v1beta1.StorageRequest\x1a\x33.chrys.cloud.videostreaming.v1beta1.StorageResponse\"\x00\x12}\n\nSystemTime\x12\x35.chrys.cloud.videostreaming.v1beta1.SystemTimeRequest\x1a\x36.chrys.cloud.videostreaming.v1beta1.SystemTimeResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x15video_streaming.proto\x12\"chrys.cloud.videostreaming.v1beta1\"\xd2\x06\n\x0f\x41nnotateRequest\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\x12\x15\n\rend_timestamp\x18\x05 \x01(\x03\x12\x13\n\x0bobject_type\x18\x06 \x01(\t\x12\x11\n\tobject_id\x18\x07 \x01(\t\x12\x1a\n\x12object_tracking_id\x18\x08 \x01(\t\x12\x12\n\nconfidence\x18\t \x01(\x01\x12J\n\x12object_bouding_box\x18\n \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.BoudingBox\x12>\n\x08location\x18\x0b \x01(\x0b\x32,.chrys.cloud.videostreaming.v1beta1.Location\x12I\n\x11object_coordinate\x18\x0c \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12<\n\x04mask\x18\r \x03(\x0b\x32..chrys.cloud.videostreaming.v1beta1.Coordinate\x12\x18\n\x10object_signature\x18\x0e \x03(\x01\x12\x10\n\x08ml_model\x18\x0f \x01(\t\x12\x18\n\x10ml_model_version\x18\x10 \x01(\t\x12\r\n\x05width\x18\x11 \x01(\x05\x12\x0e\n\x06height\x18\x12 \x01(\x05\x12\x13\n\x0bis_keyframe\x18\x13 \x01(\x08\x12\x12\n\nvideo_type\x18\x14 \x01(\t\x12\x18\n\x10offset_timestamp\x18\x15 \x01(\x03\x12\x17\n\x0foffset_duration\x18\x16 \x01(\x03\x12\x17\n\x0foffset_frame_id\x18\x17 \x01(\x03\x12\x18\n\x10offset_packet_id\x18\x18 \x01(\x03\x12\x15\n\rcustom_meta_1\x18\x19 \x01(\t\x12\x15\n\rcustom_meta_2\x18\x1a \x01(\t\x12\x15\n\rcustom_meta_3\x18\x1b \x01(\t\x12\x15\n\rcustom_meta_4\x18\x1c \x01(\t\x12\x15\n\rcustom_meta_5\x18\x1d \x01(\t\"h\n\x10\x41nnotateResponse\x12\x13\n\x0b\x64\x65vice_name\x18\x01 \x01(\t\x12\x18\n\x10remote_stream_id\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x17\n\x0fstart_timestamp\x18\x04 \x01(\x03\"$\n\x08Location\x12\x0b\n\x03lat\x18\x01 \x01(\x01\x12\x0b\n\x03lon\x18\x02 \x01(\x01\"-\n\nCoordinate\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"F\n\nBoudingBox\x12\x0b\n\x03top\x18\x01 \x01(\x05\x12\x0c\n\x04left\x18\x02 \x01(\x05\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\"p\n\nShapeProto\x12?\n\x03\x64im\x18\x02 \x03(\x0b\x32\x32.chrys.cloud.videostreaming.v1beta1.ShapeProto.Dim\x1a!\n\x03\x44im\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\"\xe2\x02\n\nVideoFrame\x12\r\n\x05width\x18\x01 \x01(\x03\x12\x0e\n\x06height\x18\x02 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\x12\x13\n\x0bis_keyframe\x18\x05 \x01(\x08\x12\x0b\n\x03pts\x18\x06 \x01(\x03\x12\x0b\n\x03\x64ts\x18\x07 \x01(\x03\x12\x12\n\nframe_type\x18\x08 \x01(\t\x12\x12\n\nis_corrupt\x18\t \x01(\x08\x12\x11\n\ttime_base\x18\n \x01(\x01\x12=\n\x05shape\x18\x0b \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.ShapeProto\x12\x11\n\tdevice_id\x18\x0c \x01(\t\x12\x0e\n\x06packet\x18\r \x01(\x03\x12\x10\n\x08keyframe\x18\x0e \x01(\x03\x12\x11\n\textradata\x18\x0f \x01(\x0c\x12\x12\n\ncodec_name\x18\x10 \x01(\t\x12\x0f\n\x07pix_fmt\x18\x11 \x01(\t\">\n\x11VideoFrameRequest\x12\x16\n\x0ekey_frame_only\x18\x01 \x01(\x08\x12\x11\n\tdevice_id\x18\x02 \x01(\t\"\\\n\x19VideoFrameBufferedRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0etimestamp_from\x18\x02 \x01(\x03\x12\x14\n\x0ctimestamp_to\x18\x03 \x01(\x03\"\xde\x01\n\nListStream\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0e\x66\x61iling_streak\x18\x03 \x01(\x03\x12\x15\n\rhealth_status\x18\x04 \x01(\t\x12\x0c\n\x04\x64\x65\x61\x64\x18\x05 \x01(\x08\x12\x11\n\texit_code\x18\x06 \x01(\x03\x12\x0b\n\x03pid\x18\x07 \x01(\x05\x12\x0f\n\x07running\x18\x08 \x01(\x08\x12\x0e\n\x06paused\x18\t \x01(\x08\x12\x12\n\nrestarting\x18\n \x01(\x08\x12\x11\n\toomkilled\x18\x0b \x01(\x08\x12\r\n\x05\x65rror\x18\x0c \x01(\t\"\x13\n\x11ListStreamRequest\"6\n\x0cProxyRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bpassthrough\x18\x02 \x01(\x08\"7\n\rProxyResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x13\n\x0bpassthrough\x18\x02 \x01(\x08\"2\n\x0eStorageRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x08\"3\n\x0fStorageResponse\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x08\"\x88\x01\n\nVideoCodec\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05width\x18\x02 \x01(\x05\x12\x0e\n\x06height\x18\x03 \x01(\x05\x12\x0f\n\x07pix_fmt\x18\x04 \x01(\t\x12\x11\n\textradata\x18\x05 \x01(\x0c\x12\x16\n\x0e\x65xtradata_size\x18\x06 \x01(\x05\x12\x11\n\tlong_name\x18\x07 \x01(\t\"&\n\x11VideoProbeRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"\x9a\x01\n\x12VideoProbeResponse\x12\x43\n\x0bvideo_codec\x18\x01 \x01(\x0b\x32..chrys.cloud.videostreaming.v1beta1.VideoCodec\x12?\n\x06\x62uffer\x18\x02 \x01(\x0b\x32/.chrys.cloud.videostreaming.v1beta1.VideoBuffer\"v\n\x0bVideoBuffer\x12\x12\n\nstart_time\x18\x01 \x01(\x03\x12\x10\n\x08\x65nd_time\x18\x02 \x01(\x03\x12\x18\n\x10\x64uration_seconds\x18\x03 \x01(\x03\x12\x17\n\x0f\x61pproximate_fps\x18\x04 \x01(\x05\x12\x0e\n\x06\x66rames\x18\x05 \x01(\x03\"*\n\x12SystemTimeResponse\x12\x14\n\x0c\x63urrent_time\x18\x01 \x01(\x03\"\x13\n\x11SystemTimeRequest2\xe5\x07\n\x05Image\x12{\n\x10VideoLatestImage\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoFrameRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00\x12\x87\x01\n\x12VideoBufferedImage\x12=.chrys.cloud.videostreaming.v1beta1.VideoFrameBufferedRequest\x1a..chrys.cloud.videostreaming.v1beta1.VideoFrame\"\x00\x30\x01\x12}\n\nVideoProbe\x12\x35.chrys.cloud.videostreaming.v1beta1.VideoProbeRequest\x1a\x36.chrys.cloud.videostreaming.v1beta1.VideoProbeResponse\"\x00\x12x\n\x0bListStreams\x12\x35.chrys.cloud.videostreaming.v1beta1.ListStreamRequest\x1a..chrys.cloud.videostreaming.v1beta1.ListStream\"\x00\x30\x01\x12w\n\x08\x41nnotate\x12\x33.chrys.cloud.videostreaming.v1beta1.AnnotateRequest\x1a\x34.chrys.cloud.videostreaming.v1beta1.AnnotateResponse\"\x00\x12n\n\x05Proxy\x12\x30.chrys.cloud.videostreaming.v1beta1.ProxyRequest\x1a\x31.chrys.cloud.videostreaming.v1beta1.ProxyResponse\"\x00\x12t\n\x07Storage\x12\x32.chrys.cloud.videostreaming.v1beta1.StorageRequest\x1a\x33.chrys.cloud.videostreaming.v1beta1.StorageResponse\"\x00\x12}\n\nSystemTime\x12\x35.chrys.cloud.videostreaming.v1beta1.SystemTimeRequest\x1a\x36.chrys.cloud.videostreaming.v1beta1.SystemTimeResponse\"\x00\x62\x06proto3'
 )
 
 
@@ -1149,6 +1149,13 @@ _VIDEOPROBERESPONSE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='video_codec', full_name='chrys.cloud.videostreaming.v1beta1.VideoProbeResponse.video_codec', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='buffer', full_name='chrys.cloud.videostreaming.v1beta1.VideoProbeResponse.buffer', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1166,8 +1173,68 @@ _VIDEOPROBERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2449,
-  serialized_end=2538,
+  serialized_start=2450,
+  serialized_end=2604,
+)
+
+
+_VIDEOBUFFER = _descriptor.Descriptor(
+  name='VideoBuffer',
+  full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='start_time', full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer.start_time', index=0,
+      number=1, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='end_time', full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer.end_time', index=1,
+      number=2, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='duration_seconds', full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer.duration_seconds', index=2,
+      number=3, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='approximate_fps', full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer.approximate_fps', index=3,
+      number=4, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='frames', full_name='chrys.cloud.videostreaming.v1beta1.VideoBuffer.frames', index=4,
+      number=5, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2606,
+  serialized_end=2724,
 )
 
 
@@ -1198,8 +1265,8 @@ _SYSTEMTIMERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2540,
-  serialized_end=2582,
+  serialized_start=2726,
+  serialized_end=2768,
 )
 
 
@@ -1223,8 +1290,8 @@ _SYSTEMTIMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2584,
-  serialized_end=2603,
+  serialized_start=2770,
+  serialized_end=2789,
 )
 
 _ANNOTATEREQUEST.fields_by_name['object_bouding_box'].message_type = _BOUDINGBOX
@@ -1235,6 +1302,7 @@ _SHAPEPROTO_DIM.containing_type = _SHAPEPROTO
 _SHAPEPROTO.fields_by_name['dim'].message_type = _SHAPEPROTO_DIM
 _VIDEOFRAME.fields_by_name['shape'].message_type = _SHAPEPROTO
 _VIDEOPROBERESPONSE.fields_by_name['video_codec'].message_type = _VIDEOCODEC
+_VIDEOPROBERESPONSE.fields_by_name['buffer'].message_type = _VIDEOBUFFER
 DESCRIPTOR.message_types_by_name['AnnotateRequest'] = _ANNOTATEREQUEST
 DESCRIPTOR.message_types_by_name['AnnotateResponse'] = _ANNOTATERESPONSE
 DESCRIPTOR.message_types_by_name['Location'] = _LOCATION
@@ -1253,6 +1321,7 @@ DESCRIPTOR.message_types_by_name['StorageResponse'] = _STORAGERESPONSE
 DESCRIPTOR.message_types_by_name['VideoCodec'] = _VIDEOCODEC
 DESCRIPTOR.message_types_by_name['VideoProbeRequest'] = _VIDEOPROBEREQUEST
 DESCRIPTOR.message_types_by_name['VideoProbeResponse'] = _VIDEOPROBERESPONSE
+DESCRIPTOR.message_types_by_name['VideoBuffer'] = _VIDEOBUFFER
 DESCRIPTOR.message_types_by_name['SystemTimeResponse'] = _SYSTEMTIMERESPONSE
 DESCRIPTOR.message_types_by_name['SystemTimeRequest'] = _SYSTEMTIMEREQUEST
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -1391,6 +1460,13 @@ VideoProbeResponse = _reflection.GeneratedProtocolMessageType('VideoProbeRespons
   })
 _sym_db.RegisterMessage(VideoProbeResponse)
 
+VideoBuffer = _reflection.GeneratedProtocolMessageType('VideoBuffer', (_message.Message,), {
+  'DESCRIPTOR' : _VIDEOBUFFER,
+  '__module__' : 'video_streaming_pb2'
+  # @@protoc_insertion_point(class_scope:chrys.cloud.videostreaming.v1beta1.VideoBuffer)
+  })
+_sym_db.RegisterMessage(VideoBuffer)
+
 SystemTimeResponse = _reflection.GeneratedProtocolMessageType('SystemTimeResponse', (_message.Message,), {
   'DESCRIPTOR' : _SYSTEMTIMERESPONSE,
   '__module__' : 'video_streaming_pb2'
@@ -1414,8 +1490,8 @@ _IMAGE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=2606,
-  serialized_end=3607,
+  serialized_start=2792,
+  serialized_end=3789,
   methods=[
   _descriptor.MethodDescriptor(
     name='VideoLatestImage',

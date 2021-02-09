@@ -21,6 +21,14 @@ import numpy as np
 import time
 import os
 
+def gen_buffer_probe_request(device_name):
+    """ Create GRPC request to get in memory probe info """
+
+    req = video_streaming_pb2.VideoProbeRequest()
+    req.device_id = device_name
+
+    return req
+
 def gen_image_request(device_name, keyframe_only):
     """ Create an object to request a video frame """
 
@@ -28,7 +36,7 @@ def gen_image_request(device_name, keyframe_only):
     req = video_streaming_pb2.VideoFrameRequest()
     req.device_id = device_name
     req.key_frame_only = keyframe_only
-    yield req
+    return req
 
 if __name__ == "__main__":
     
@@ -42,12 +50,20 @@ if __name__ == "__main__":
     channel = grpc.insecure_channel('127.0.0.1:50001', options=options)
     stub = video_streaming_pb2_grpc.ImageStub(channel)
 
-    print(args.keyframe)
+    # displaying video info (if exists)
+    probe = stub.VideoProbe(gen_buffer_probe_request(device_name=args.device))
+    aproxFps = 30
+    if probe.buffer:
+        aproxFps = probe.buffer.approximate_fps
+
+    print(probe)
     
+    # requesting video frames
+    req = gen_image_request(device_name=args.device,keyframe_only=args.keyframe)
     while True:
-        prev = int(time.time() * 1000)
-        for frame in stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=args.keyframe)):
-            # read raw frame data and convert to numpy array
+        frame = stub.VideoLatestImage(req)
+        # read raw frame data and convert to numpy array
+        if frame is not None:
             img_bytes = frame.data 
             re_img = np.frombuffer(img_bytes, dtype=np.uint8)
 
@@ -56,8 +72,12 @@ if __name__ == "__main__":
                 reshape = tuple([int(dim.size) for dim in frame.shape.dim])
                 re_img = np.reshape(re_img, reshape)
 
-                # display image
+                # # display image
                 cv2.imshow('box', re_img)
                 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+        
+        # delay by assumed fps rate
+        delay = 1 / aproxFps
+        time.sleep(delay)

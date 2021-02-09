@@ -35,7 +35,7 @@ def gen_image_request(device_name, keyframe_only):
     req = video_streaming_pb2.VideoFrameRequest()
     req.device_id = device_name
     req.key_frame_only = keyframe_only
-    yield req
+    return req
 
 
 if __name__ == "__main__":
@@ -57,7 +57,7 @@ if __name__ == "__main__":
             print(stream)
     
     if args.device:
-        for frame in stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=False)):
-            print("is keyframe: ", frame.is_keyframe)
-            print("frame type: ", frame.frame_type)
-            print("frame shape: ", frame.shape)
+        frame = stub.VideoLatestImage(gen_image_request(device_name=args.device,keyframe_only=False))
+        print("is keyframe: ", frame.is_keyframe)
+        print("frame type: ", frame.frame_type)
+        print("frame shape: ", frame.shape)

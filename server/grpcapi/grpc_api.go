@@ -15,12 +15,13 @@
 package grpcapi
 
 import (
+	"container/list"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,34 +43,18 @@ type StorageInput struct {
 }
 
 type grpcImageHandler struct {
-	redisConn       *redis.Client
-	deviceMap       sync.Map
-	processManager  *services.ProcessManager
-	settingsManager *services.SettingsManager
-	edgeKey         *string
-	msgQueue        rmq.Queue
+	redisConn               *redis.Client
+	deviceMap               sync.Map
+	processManager          *services.ProcessManager
+	settingsManager         *services.SettingsManager
+	edgeKey                 *string
+	msgQueue                rmq.Queue
+	realtimeCache           sync.Map
+	realtimeDeviceQueryTime sync.Map
 }
 
 // NewGrpcImageHandler returns main GRPC API handler
 func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManager *services.SettingsManager, rdb *redis.Client) *grpcImageHandler {
-
-	// var rdb *redis.Client
-	// for i := 0; i < 3; i++ {
-	// 	rdb = redis.NewClient(&redis.Options{
-	// 		Addr:     g.Conf.Redis.Connection,
-	// 		Password: g.Conf.Redis.Password,
-	// 		DB:       g.Conf.Redis.Database,
-	// 	})
-
-	// 	status := rdb.Ping()
-	// 	g.Log.Info("redis status: ", status)
-	// 	if status.Err() != nil {
-	// 		g.Log.Warn("waiting for redis to boot up", status.Err().Error)
-	// 		time.Sleep(3 * time.Second)
-	// 		continue
-	// 	}
-	// 	break
-	// }
 
 	conn := rmq.OpenConnectionWithRedisClient("annotationService", rdb)
 	msgQueue := conn.OpenQueue("annotationqueue")
@@ -80,11 +65,13 @@ func NewGrpcImageHandler(processManager *services.ProcessManager, settingsManage
 	msgQueue.AddBatchConsumerWithTimeout("annotationqueue", g.Conf.Annotation.MaxBatchSize, time.Duration(g.Conf.Annotation.PollDurationMs)*time.Millisecond, annotationConsumer)
 
 	return &grpcImageHandler{
-		redisConn:       rdb,
-		deviceMap:       sync.Map{},
-		processManager:  processManager,
-		settingsManager: settingsManager,
-		msgQueue:        msgQueue,
+		redisConn:               rdb,
+		deviceMap:               sync.Map{},
+		processManager:          processManager,
+		settingsManager:         settingsManager,
+		msgQueue:                msgQueue,
+		realtimeCache:           sync.Map{},
+		realtimeDeviceQueryTime: sync.Map{},
 	}
 }
 
@@ -135,126 +122,190 @@ func (gih *grpcImageHandler) ListStreams(req *pb.ListStreamRequest, stream pb.Im
 }
 
 // VideoLatestImage - bidirectional connection with client continously sending live video image
-func (gih *grpcImageHandler) VideoLatestImage(stream pb.Image_VideoLatestImageServer) error {
+func (gih *grpcImageHandler) VideoLatestImage(ctx context.Context, request *pb.VideoFrameRequest) (*pb.VideoFrame, error) {
 
-	// clientDeadline := time.Now().Add(time.Duration(15) * time.Second)
-	// streamContext, streamCancel := context.WithDeadline(stream.Context(), clientDeadline)
-	// defer streamCancel()
-	streamContext := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	failedContinousRequests := 0
+	streamName := request.DeviceId
 
-	for {
+	// every 5 seconds report last query time
+	currentTime := time.Now().UnixNano() / int64(time.Millisecond)
 
-		select {
-		case <-streamContext.Done():
-			g.Log.Warn("Context done: ", streamContext.Err())
-			return streamContext.Err()
-		default:
-		}
+	lastQTime := int64(0)
+	if lastDeviceQueryTime, ok := gih.realtimeDeviceQueryTime.Load(request.DeviceId); ok {
+		lastQTime = lastDeviceQueryTime.(int64)
+	}
+	if currentTime-lastQTime > (5000) {
+		// g.Log.Info("updating last query time for", request.DeviceId)
+		// storeValuesStart := time.Now().UnixNano()
 
-		request, err := stream.Recv()
-		if err == io.EOF {
-			return nil
-		} else if err != nil {
-			g.Log.Warn("failed to retrieve gprc image request", err)
-			if failedContinousRequests > 5 {
-				return nil
-			}
-			failedContinousRequests++
-			continue
-		}
-
-		streamName := request.DeviceId
 		isKeyFrameOnly := request.KeyFrameOnly
 
 		decodeOnlyKeyFramesKey := models.RedisIsKeyFrameOnlyPrefix + streamName
-		err = gih.redisConn.Set(decodeOnlyKeyFramesKey, strconv.FormatBool(isKeyFrameOnly), 0).Err()
+		err := gih.redisConn.Set(decodeOnlyKeyFramesKey, strconv.FormatBool(isKeyFrameOnly), 0).Err()
 		if err != nil {
 			g.Log.Error("failed to set if is keyframe only", streamName, err)
+			return nil, status.Errorf(codes.Internal, "failed to set preferences in redis")
 		}
 
-		// set last access time for the image on this device (streamName)
-		val := time.Now().UnixNano() / int64(time.Millisecond)
-
 		valMap := make(map[string]interface{}, 0)
-		valMap[models.RedisLastAccessQueryTimeKey] = val
+		valMap[models.RedisLastAccessQueryTimeKey] = currentTime
 
 		rErr := gih.redisConn.HSet(models.RedisLastAccessPrefix+streamName, valMap).Err()
 		if rErr != nil {
 			g.Log.Error("failed to update on stopProxy redis", streamName, rErr)
-			continue
+			return nil, status.Errorf(codes.Internal, "can't access redis")
 		}
 
-		// loading VideoFrame from redis
-		vf := &pb.VideoFrame{
-			DeviceId: streamName,
+		// storeValueEnd := time.Now().UnixNano()
+		// g.Log.Info("Time to store query values [ms] ", (storeValueEnd-storeValuesStart)/1e+6)
+		gih.realtimeDeviceQueryTime.Store(request.DeviceId, currentTime)
+	}
+
+	// // loading VideoFrame from redis
+	vf := &pb.VideoFrame{}
+
+	isDeviceFirstRun := false
+
+	for i := 0; i < 3; i++ {
+
+		var cache *list.List
+		if cacheVal, ok := gih.realtimeCache.Load(request.DeviceId); ok {
+			cache = cacheVal.(*list.List)
+		} else {
+			cache = list.New()
+			gih.realtimeCache.Store(request.DeviceId, cache)
+			isDeviceFirstRun = true
+		}
+		if isDeviceFirstRun {
+			go func() {
+				gih.cacheLiveVideo(request.DeviceId)
+			}()
+
+			time.Sleep(time.Millisecond * 200)
 		}
 
-		// check where we left off for device/streamName
+		if cache.Len() > 0 {
+			// g.Log.Info("Cache length: ", request.DeviceId, cache.Len())
+			front := cache.Front()
+			if front != nil {
+				redisVal := front.Value.(redis.XMessage)
+				vf = gih.unmarshalRedisImage(vf, request.DeviceId, redisVal)
+
+				// if cache.Len() > 1 {
+				cache.Remove(front)
+				// }
+				break
+			}
+		} else {
+			time.Sleep(time.Millisecond * 16)
+		}
+	}
+
+	return vf, nil
+}
+
+func (gih *grpcImageHandler) cacheLiveVideo(deviceId string) {
+
+	for {
+
 		lastTs := "0"
-		if last_ts, ok := gih.deviceMap.Load(streamName); ok {
+		if last_ts, ok := gih.deviceMap.Load(deviceId); ok {
 			lastTs = last_ts.(string)
 		}
 
-		// waiting up to 3 x 16ms = max to get an image from redis, otherwise considered that there is no image
-		for i := 0; i < 3; i++ {
+		currentTime := time.Now().Unix() * 1000
 
-			imgFound := false
+		lastQTime := int64(0)
+		if lastDeviceQueryTime, ok := gih.realtimeDeviceQueryTime.Load(deviceId); ok {
+			lastQTime = lastDeviceQueryTime.(int64)
+		}
 
-			args := &redis.XReadArgs{
-				Streams: []string{streamName, lastTs},
-				Block:   time.Second,
-				Count:   60,
+		if lastTs != "0" && (currentTime-lastQTime) > (10*1000) { // if no query in the past 10 seconds stop caching
+			g.Log.Info("stopping and cleaning cache for livestream ", deviceId)
+			if cacheVal, ok := gih.realtimeCache.Load(deviceId); ok {
+				fifoQueue := cacheVal.(*list.List)
+				for j := 0; j < fifoQueue.Len()-10; j++ {
+					fr := fifoQueue.Front()
+					fifoQueue.Remove(fr)
+				}
+				gih.realtimeCache.Delete(deviceId)
+				gih.deviceMap.Delete(deviceId)
+				gih.realtimeDeviceQueryTime.Delete(deviceId)
 			}
+			break
+		}
 
-			vals, err := gih.redisConn.XRead(args).Result()
-			if err != nil {
-				g.Log.Info("waiting for an image, retry #", i, err.Error())
-				continue
-			}
+		args := &redis.XReadArgs{
+			Streams: []string{deviceId, lastTs},
+			Block:   time.Millisecond * 32,
+			Count:   10,
+		}
+
+		vals, err := gih.redisConn.XRead(args).Result()
+		if err != nil {
+			// g.Log.Info("no image ready yet, returning nil#", deviceId, err.Error())
+			continue
+		}
+
+		// add all redis.Xstream values to cache, except the first one (which is returned)
+		if len(vals) > 0 {
 			for _, val := range vals {
-				messages := val.Messages
+				if len(val.Messages) > 0 {
 
-				if len(messages) > 0 {
-					// reading only latest image
-					lastMessage := messages[len(messages)-1]
-					id := lastMessage.ID
-					gih.deviceMap.Store(streamName, id)
-
-					object := lastMessage.Values
-					if val, ok := object["data"]; ok {
-						str := val.(string)
-						b := []byte(str)
-						err := proto.Unmarshal(b, vf)
-						if err != nil {
-							g.Log.Error("failed to unmarshall VideoFrame proto", err)
-							break
-						}
-						imgFound = true
+					var fifoQueue *list.List
+					if cacheVal, ok := gih.realtimeCache.Load(deviceId); ok {
+						fifoQueue = cacheVal.(*list.List)
+					} else {
+						fifoQueue = list.New()
 					}
+
+					// managing queue not to exceed 10 frames (frame dropping if client queries slower than frames are produced by the camera)
+					for fifoQueue.Len() >= 10 {
+						fr := fifoQueue.Front()
+						fifoQueue.Remove(fr)
+					}
+
+					for i := 0; i < len(val.Messages); i++ {
+						msg := val.Messages[i]
+						// add to cache
+						fifoQueue.PushBack(msg)
+
+						if i == len(val.Messages)-1 {
+							gih.deviceMap.Store(deviceId, msg.ID)
+						}
+					}
+					gih.realtimeCache.Store(deviceId, fifoQueue)
 				}
 			}
-			if imgFound {
-				break
-			}
-			// delay or 16 ms before new attempty
-			time.Sleep(time.Millisecond * 16)
 		}
-
-		if errStr := stream.Send(vf); errStr != nil {
-			g.Log.Error("grp live image send error", errStr)
-		}
-		failedContinousRequests = 0
 	}
+}
+
+func (gih *grpcImageHandler) unmarshalRedisImage(vf *pb.VideoFrame, deviceId string, msg redis.XMessage) *pb.VideoFrame {
+
+	object := msg.Values
+	if val, ok := object["data"]; ok {
+		str := val.(string)
+		b := []byte(str)
+		err := proto.Unmarshal(b, vf)
+		if err != nil {
+			g.Log.Error("failed to unmarshall VideoFrame proto", err)
+		}
+		vf.DeviceId = deviceId
+	}
+
+	return vf
 }
 
 // VideoBufferProbe is a probing method for in-memory video stream
 func (gih *grpcImageHandler) VideoProbe(ctx context.Context, req *pb.VideoProbeRequest) (*pb.VideoProbeResponse, error) {
 
+	videoBuffer := &pb.VideoBuffer{}
 	codecInfo := &pb.VideoCodec{}
 
-	codecInfoCmd := gih.redisConn.Get(models.RedisCodecVideoInfo)
+	codecInfoCmd := gih.redisConn.Get(models.RedisCodecVideoInfo + req.DeviceId)
 	codecInfoBytes, err := codecInfoCmd.Bytes()
 	if err != nil {
 		g.Log.Error("failed to get bytes for code info", err)
@@ -266,11 +317,64 @@ func (gih *grpcImageHandler) VideoProbe(ctx context.Context, req *pb.VideoProbeR
 		}
 	}
 
+	lastFrame := gih.redisConn.XRevRangeN(models.RedisInMemoryQueue+req.DeviceId, "+", "-", 1)
+	firstFrame := gih.redisConn.XRangeN(models.RedisInMemoryQueue+req.DeviceId, "-", "+", 1)
+
+	// fps := 0
+	length, err := gih.redisConn.XLen(models.RedisInMemoryQueue + req.DeviceId).Result()
+	if err != nil {
+		g.Log.Error("failed to approximate fps")
+	}
+
+	startTs := int64(0)
+	endTs := int64(0)
+
+	first, err := firstFrame.Result()
+	last, err := lastFrame.Result()
+	if err != nil {
+		g.Log.Error("no in memory buffer for ", req.DeviceId)
+	} else {
+		startTs = gih.parseRedisTimestamp(first)
+		endTs = gih.parseRedisTimestamp(last)
+	}
+
+	if startTs > 0 {
+		videoBuffer.StartTime = startTs
+		videoBuffer.EndTime = endTs
+		videoBuffer.DurationSeconds = int64((endTs - startTs) / 1000)
+
+		frameEveryMs := float64(videoBuffer.DurationSeconds) / float64(length)
+		approxFps := float64(1) / frameEveryMs
+
+		videoBuffer.ApproximateFps = int32(approxFps)
+		videoBuffer.Frames = length
+	}
+
 	resp := &pb.VideoProbeResponse{
 		VideoCodec: codecInfo,
 	}
+	if videoBuffer.StartTime > 0 {
+		resp.Buffer = videoBuffer
+	}
 
 	return resp, nil
+}
+
+func (gih *grpcImageHandler) parseRedisTimestamp(msg []redis.XMessage) int64 {
+	ts := int64(0)
+	if len(msg) > 0 {
+		msg := msg[0]
+		splitted := strings.Split(msg.ID, "-")
+		if len(splitted) == 2 {
+			startTs, err := strconv.ParseInt(splitted[0], 10, 64)
+			if err != nil {
+				g.Log.Error("failed to parse probe start timestamp", err)
+			} else {
+				ts = startTs
+			}
+		}
+	}
+	return ts
 }
 
 // System time returns current systems time (taken from redis)
@@ -392,7 +496,7 @@ func (gih *grpcImageHandler) VideoBufferedImage(req *pb.VideoFrameBufferedReques
 				}
 				if !isReadingDone {
 					if errStr := stream.Send(vf); errStr != nil {
-						g.Log.Error("grp live image send error", errStr)
+						g.Log.Error("grpc buffered image send error", errStr)
 					}
 				}
 			}
