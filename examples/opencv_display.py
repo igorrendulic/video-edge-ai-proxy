@@ -54,7 +54,8 @@ if __name__ == "__main__":
     probe = stub.VideoProbe(gen_buffer_probe_request(device_name=args.device))
     aproxFps = 30
     if probe.buffer:
-        aproxFps = probe.buffer.approximate_fps
+        if probe.buffer.approximate_fps > 0:
+            aproxFps = probe.buffer.approximate_fps
 
     print(probe)
     
