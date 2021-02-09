@@ -78,6 +78,24 @@ Open browser and visit `chrysalisportal` at address: `http://localhost:8905`
 
 For installation outside of WSL 2 on Windows please check manuall installation steps [here](https://chryscloud.github.io/api_doc/edge-proxy/getting-started/quick-start/#manual-installation)
 
+
+### Upgrading the version
+
+You can follow the installation process:
+
+```
+curl -O https://raw.githubusercontent.com/chryscloud/api_doc/master/install-chrysedge.sh
+
+chmod 777 install-chrysedge.sh
+
+./install-chrysedge.sh
+```
+
+And restart (navigate to folder where your docker-compose.yml is):
+```
+sudo docker-compose restart
+```
+
 ## Usage
 
 Open your browser and go to: `http://localhost:8905`
