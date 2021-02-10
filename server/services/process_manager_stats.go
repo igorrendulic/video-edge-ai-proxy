@@ -40,6 +40,7 @@ func (pm *ProcessManager) StatsAllProcesses(sett *models.Settings) (*models.AllS
 	stats.TotalVolumeSize = totalVolumeSize
 	stats.TotalActiveVolumes = int(activeVolumes)
 	stats.GatewayID = sett.GatewayID
+	stats.TotalImageSize = totalImgSize
 
 	stats.ContainersStats = make([]*models.ProcessStats, 0)
 
