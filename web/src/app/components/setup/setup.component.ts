@@ -54,6 +54,7 @@ export class SetupComponent implements OnInit, OnDestroy {
 
     const dialogRef = this.dialog.open(WaitDialogComponent, {
       maxWidth: "400px",
+      disableClose: true,
       data: {
           title: "Please wait...",
           message: "Checking for updates"}
@@ -126,7 +127,7 @@ export class SetupComponent implements OnInit, OnDestroy {
 
     GlobalVars.CameraTypes.forEach((value,key) => {
       console.log(key,value);
-      this.edgeService.getDockerImages(value).subscribe(data => {
+      this.edgeService.getDeviceDockerImages(value).subscribe(data => {
         this.imageUpgrade.next(data);
       });
     });

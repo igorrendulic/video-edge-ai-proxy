@@ -40,10 +40,10 @@ import (
 )
 
 var (
-	grpcServer    *grpc.Server
-	grpcConn      net.Listener
-	defaultDBPath = "/data/chrysalis"
-	// defaultDBPath = "/home/igor/Downloads/temp/chrysedge/data"
+	grpcServer *grpc.Server
+	grpcConn   net.Listener
+	// defaultDBPath = "/data/chrysalis"
+	defaultDBPath = "/home/igor/Downloads/temp/chrysedge/data"
 )
 
 func main() {
@@ -138,6 +138,7 @@ func main() {
 	// Services
 	settingsService := services.NewSettingsManager(storage)
 	processService := services.NewProcessManager(storage, rdb)
+	appService := services.NewAppManager(storage, rdb)
 	mqttService := mqtt.NewMqttManager(rdb, settingsService, processService)
 	mqttService.StartGatewayListener()
 	defer mqttService.StopGateway()
@@ -151,7 +152,7 @@ func main() {
 	gin.SetMode(conf.Mode)
 
 	router := msrv.NewAPIRouter(&conf.YamlConfig)
-	router = r.ConfigAPI(router, processService, settingsService, rdb)
+	router = r.ConfigAPI(router, processService, settingsService, appService, rdb)
 
 	// start server
 	srv := msrv.Start(&conf.YamlConfig, router, g.Log)

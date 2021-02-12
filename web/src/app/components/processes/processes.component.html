@@ -1,92 +1,169 @@
 <mat-toolbar class="menu-bar mat-elevation-z1">
-    <h1>RTSP Processes</h1>
+    <h1>Processes</h1>
     <div fxFlex></div>
     &nbsp;
     <button mat-stroked-button class="icon favorite-icon" color="primary" aria-label="Add new camera" routerLink="/local/addrtsp">
       <mat-icon>videocam</mat-icon>
       <span fxHide fxShow.xl fxShow.lg fxShow.md>&nbsp;Connect New RTSP Camera</span>
     </button>
+    &nbsp;
+    <button mat-stroked-button class="icon favorite-icon" color="primary" aria-label="Add application" routerLink="/local/addapp">
+      <mat-icon>insights</mat-icon>
+      <span fxHide fxShow.xl fxShow.lg fxShow.md>&nbsp;Add Application</span>
+    </button>
 </mat-toolbar>
-<div *ngIf="!showProcesses" fxFlex.sm="0 1 100%" fxLayout="column" fxLayoutAlign="center center">
-  <div class="docs-aiexamples-category-list">
-    <a class="docs-aiexamples-category-list-item" routerLink="/local/addrtsp">
-        <div class="docs-aiexamples-list-card">
-            <div class="docs-aiexamples-category-list-card-image-wrapper" style="background-image: url('/assets/screenshots/rtmp_camera.jpg');"></div>
-            <div class="docs-aiexamples-category-list-card-title">Connect RTSP Camera</div>
-            <div class="docs-aiexamples-category-list-card-summary">Create a connection with a RTSP camera on the Edge</div>
+
+
+  <mat-tab-group dynamicHeight [(selectedIndex)]="tabIndex">
+    <mat-tab label="Cameras">
+      <div class="example-small-box mat-elevation-z4">
+
+        <div *ngIf="!showProcesses" fxFlex.sm="0 1 100%" fxLayout="column" fxLayoutAlign="center center">
+          <div class="docs-aiexamples-category-list">
+            <a class="docs-aiexamples-category-list-item" routerLink="/local/addrtsp">
+                <div class="docs-aiexamples-list-card">
+                    <div class="docs-aiexamples-category-list-card-image-wrapper" style="background-image: url('/assets/screenshots/rtmp_camera.jpg');"></div>
+                    <div class="docs-aiexamples-category-list-card-title">Connect RTSP Camera</div>
+                    <div class="docs-aiexamples-category-list-card-summary">Create a connection with a RTSP camera on the Edge</div>
+                </div>
+            </a>
+          </div>
         </div>
-    </a>
-  </div>
 
-</div>
- <div *ngIf="showProcesses">
-   <div *ngIf="selection.selected.length > 0" class="table-action-buttons">
-    <button mat-raised-button color="accent" (click)="upgrade()" [disabled]="disabledUpgradeButton">Upgrade Now</button>
-    &nbsp;&nbsp;
-    <a href="https://github.com/chryscloud/video-edge-ai-proxy/releases" target="_blank" mat-stroked-button color="primary">About Upgrades</a>
-   </div>
- <mat-table [dataSource]="processes" class="mat-elevation-z1">
+        <div *ngIf="showProcesses">
+          
 
-   <!-- Checkbox Column -->
-   <ng-container matColumnDef="select">
-    <mat-header-cell *matHeaderCellDef>
-      <mat-checkbox (change)="$event ? selectToggle() : null"
-                    [checked]="selection.hasValue() && isAllUpgradesSelected()"
-                    [indeterminate]="selection.hasValue() && !isAllUpgradesSelected()">
-      </mat-checkbox>
-    </mat-header-cell>
-    <mat-cell *matCellDef="let row">
-      <mat-checkbox (click)="$event.stopPropagation()"
-                    (change)="$event ? selection.toggle(row) : null"
-                    [checked]="selection.isSelected(row)"
-                    [disabled]="!row.upgrade_available">
-      </mat-checkbox>
-    </mat-cell>
-  </ng-container>
+          <div *ngIf="selection.selected.length > 0" class="table-action-buttons">
+           <button mat-raised-button color="accent" (click)="upgrade()" [disabled]="disabledUpgradeButton">Upgrade Now</button>
+           &nbsp;&nbsp;
+           <a href="https://github.com/chryscloud/video-edge-ai-proxy/releases" target="_blank" mat-stroked-button color="primary">About Upgrades</a>
+          </div>
+          
+        <mat-table [dataSource]="processes" class="mat-elevation-z1">
+       
+          <!-- Checkbox Column -->
+          <ng-container matColumnDef="select">
+           <mat-header-cell *matHeaderCellDef>
+             <mat-checkbox (change)="$event ? selectToggle() : null"
+                           [checked]="selection.hasValue() && isAllUpgradesSelected()"
+                           [indeterminate]="selection.hasValue() && !isAllUpgradesSelected()">
+             </mat-checkbox>
+           </mat-header-cell>
+           <mat-cell *matCellDef="let row">
+             <mat-checkbox (click)="$event.stopPropagation()"
+                           (change)="$event ? selection.toggle(row) : null"
+                           [checked]="selection.isSelected(row)"
+                           [disabled]="!row.upgrade_available">
+             </mat-checkbox>
+           </mat-cell>
+         </ng-container>
+       
+         <!-- Container Name -->
+         <ng-container matColumnDef="id">
+           <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+           <mat-cell *matCellDef="let row"> {{row.name}} </mat-cell>
+         </ng-container>
+       
+         <!-- Image Name -->
+         <ng-container matColumnDef="name">
+           <mat-header-cell *matHeaderCellDef> Image </mat-header-cell>
+           <mat-cell *matCellDef="let row"> {{row.image_tag}} </mat-cell>
+         </ng-container>
+       
+         <!-- Upgrade available -->
+         <ng-container matColumnDef="newer_version">
+           <mat-header-cell *matHeaderCellDef> Upgrade available </mat-header-cell>
+           <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-warn' : row.upgrade_available }"> {{row.newer_version}} &nbsp; <mat-progress-bar *ngIf="row.upgrading_now" style="width: 50px;" mode="indeterminate"></mat-progress-bar> </mat-cell>
+         </ng-container>
+       
+         <ng-container matColumnDef="status">
+           <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+           <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-error' : row.status === 'restarting' }"> {{row.status}} </mat-cell>
+         </ng-container>
+       
+         <ng-container matColumnDef="created">
+           <mat-header-cell *matHeaderCellDef> Created </mat-header-cell>
+           <mat-cell *matCellDef="let row"> {{row.created | date:'short'}} </mat-cell>
+         </ng-container>
+       
+         <ng-container matColumnDef="modified">
+           <mat-header-cell *matHeaderCellDef> Modified </mat-header-cell>
+           <mat-cell *matCellDef="let row"> {{row.modified | date:'short'}} </mat-cell>
+         </ng-container>
+       
+         <!-- Disclaimer column -->
+         <ng-container matColumnDef="disclaimer">
+           <td mat-footer-cell *matFooterCellDef colspan="4" class="mat-body" style="vertical-align: middle;">
+             <i>Please note that only you can stream only 1 camera to the Chrysalis cloud in your trial period.</i>
+           </td>
+         </ng-container>
+       
+         <!-- Header and Row Declarations -->
+         <mat-header-row *matHeaderRowDef="['select','id', 'name', 'newer_version', 'status','created', 'modified']"></mat-header-row>
+         <mat-row *matRowDef="let row; columns: ['select', 'id', 'name', 'newer_version','status', 'created','modified']" [routerLink]="['/local/process/',row.name]"></mat-row>
+         
+       </mat-table>
+       </div>
+      </div>
+    </mat-tab>
+    
+    <mat-tab label="Applications">
+      <div class="example-large-box mat-elevation-z4">
+        <div *ngIf="!showApps" fxFlex.sm="0 1 100%" fxLayout="column" fxLayoutAlign="center center">
+          <div class="docs-aiexamples-category-list">
+            <a class="docs-aiexamples-category-list-item" routerLink="/local/addapp">
+                <div class="docs-aiexamples-list-card">
+                    <div class="docs-aiexamples-category-list-card-image-wrapper" style="background-image: url('/assets/screenshots/apps.jpg');"></div>
+                    <div class="docs-aiexamples-category-list-card-title">Add Applicaton</div>
+                    <div class="docs-aiexamples-category-list-card-summary">Deploy new application</div>
+                </div>
+            </a>
+          </div>
+        </div>
 
-  <!-- Container Name -->
-  <ng-container matColumnDef="id">
-    <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
-    <mat-cell *matCellDef="let row"> {{row.name}} </mat-cell>
-  </ng-container>
-
-  <!-- Image Name -->
-  <ng-container matColumnDef="name">
-    <mat-header-cell *matHeaderCellDef> Image </mat-header-cell>
-    <mat-cell *matCellDef="let row"> {{row.image_tag}} </mat-cell>
-  </ng-container>
-
-  <!-- Upgrade available -->
-  <ng-container matColumnDef="newer_version">
-    <mat-header-cell *matHeaderCellDef> Upgrade available </mat-header-cell>
-    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-warn' : row.upgrade_available }"> {{row.newer_version}} &nbsp; <mat-progress-bar *ngIf="row.upgrading_now" style="width: 50px;" mode="indeterminate"></mat-progress-bar> </mat-cell>
-  </ng-container>
-
-  <ng-container matColumnDef="status">
-    <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
-    <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-error' : row.status === 'restarting' }"> {{row.status}} </mat-cell>
-  </ng-container>
-
-  <ng-container matColumnDef="created">
-    <mat-header-cell *matHeaderCellDef> Created </mat-header-cell>
-    <mat-cell *matCellDef="let row"> {{row.created | date:'short'}} </mat-cell>
-  </ng-container>
-
-  <ng-container matColumnDef="modified">
-    <mat-header-cell *matHeaderCellDef> Modified </mat-header-cell>
-    <mat-cell *matCellDef="let row"> {{row.modified | date:'short'}} </mat-cell>
-  </ng-container>
-
-  <!-- Disclaimer column -->
-  <ng-container matColumnDef="disclaimer">
-    <td mat-footer-cell *matFooterCellDef colspan="4" class="mat-body" style="vertical-align: middle;">
-      <i>Please note that only you can stream only 1 camera to the Chrysalis cloud in your trial period.</i>
-    </td>
-  </ng-container>
-
-  <!-- Header and Row Declarations -->
-  <mat-header-row *matHeaderRowDef="['select','id', 'name', 'newer_version', 'status','created', 'modified']"></mat-header-row>
-  <mat-row *matRowDef="let row; columns: ['select', 'id', 'name', 'newer_version','status', 'created','modified']" [routerLink]="['/local/process/',row.name]"></mat-row>
-  
-</mat-table>
-</div>
+        <div *ngIf="showApps">
+          <mat-table [dataSource]="apps" class="mat-elevation-z1">
+       
+            <!-- Container Name -->
+            <ng-container matColumnDef="id">
+              <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+              <mat-cell *matCellDef="let row"> {{row.name}} </mat-cell>
+            </ng-container>
+          
+            <!-- Image Name -->
+            <ng-container matColumnDef="name">
+              <mat-header-cell *matHeaderCellDef> Image </mat-header-cell>
+              <mat-cell *matCellDef="let row"> {{row.docker_user}}/{{row.docker_repository}}:{{row.docker_version}} </mat-cell>
+            </ng-container>
+          
+            <ng-container matColumnDef="status">
+              <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+              <mat-cell *matCellDef="let row" [ngClass]="{ 'chrys-error' : row.status === 'restarting' }"> {{row.status}} </mat-cell>
+            </ng-container>
+          
+            <ng-container matColumnDef="created">
+              <mat-header-cell *matHeaderCellDef> Created </mat-header-cell>
+              <mat-cell *matCellDef="let row"> {{row.created | date:'short'}} </mat-cell>
+            </ng-container>
+          
+            <ng-container matColumnDef="modified">
+              <mat-header-cell *matHeaderCellDef> Modified </mat-header-cell>
+              <mat-cell *matCellDef="let row"> {{row.modified | date:'short'}} </mat-cell>
+            </ng-container>
+          
+            <!-- Disclaimer column -->
+            <ng-container matColumnDef="disclaimer">
+              <td mat-footer-cell *matFooterCellDef colspan="4" class="mat-body" style="vertical-align: middle;">
+                <i>Please note that only you can stream only 1 camera to the Chrysalis cloud in your trial period.</i>
+              </td>
+            </ng-container>
+          
+            <!-- Header and Row Declarations -->
+            <mat-header-row *matHeaderRowDef="['id', 'name', 'status','created', 'modified']"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: ['id', 'name', 'status', 'created','modified']" [routerLink]="['/local/applications/',row.name]"></mat-row>
+            
+          </mat-table>
+       </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>

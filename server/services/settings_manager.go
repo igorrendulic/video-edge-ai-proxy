@@ -28,6 +28,7 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/chryscloud/video-edge-ai-proxy/utils"
 	"github.com/dgraph-io/badger/v2"
+	"github.com/docker/docker/api/types"
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/go-version"
 )
@@ -210,10 +211,19 @@ func (sm *SettingsManager) Get() (*models.Settings, error) {
 	return sm.getDefault()
 }
 
-// ListDockerImages - listing local docker images based on tag name and checking if there is a newer version available
-func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrade, error) {
+func (sm *SettingsManager) ListLocalDockerImages() ([]types.ImageSummary, error) {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 	images, err := cl.ImagesList()
+	if err != nil {
+		return nil, err
+	}
+	return images, nil
+}
+
+// ListDockerImages - listing local docker images based on tag name and checking if there is a newer version available
+func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrade, error) {
+	// cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+	images, err := sm.ListLocalDockerImages()
 	if err != nil {
 		return nil, err
 	}

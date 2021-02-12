@@ -1,0 +1,67 @@
+ 
+<mat-toolbar class="menu-bar mat-elevation-z1">
+    <button mat-mini-fab color="primary" routerLink="/local/processes" [queryParams]="{tab: '1'}">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div fxFlex></div>
+      <h1>{{process.name}}</h1>
+      <div fxFlex></div>
+      <button mat-stroked-button class="icon favorite-icon" color="primary" aria-label="Add new camera" (click)="delete(process)">
+        <mat-icon>delete</mat-icon>
+        <span fxHide fxShow.xl fxShow.lg fxShow.md>Delete</span>
+      </button>
+</mat-toolbar>
+
+<mat-card class="mat-elevation-z0" style="min-width: 300px;">
+    <mat-card-header id="sec">
+        <div fxFlexLayout="column">
+            <p><span class="material-icons icon">video_settings</span>
+            <mat-card-title class="mat-h1">{{process.name}}</mat-card-title>
+            <mat-card-subtitle [ngClass]="{'chrys-error' : process.status === 'restarting'}">Status: {{process?.status}}</mat-card-subtitle>
+        </div>
+    </mat-card-header>
+    <mat-card-content>
+        <div  fxLayout="column" fxLayoutAlign="center center">
+          <div fxLayout="row wrap" fxLayoutAlign="start start">
+            <mat-list>
+              <div mat-subheader>RTSP</div>
+              <mat-list-item>
+                <mat-icon mat-list-icon>schedule</mat-icon>
+                <div mat-line>Created</div>
+                <div mat-line>{{process?.created | date:'short'}}</div>
+              </mat-list-item>
+              <mat-list-item>
+                <mat-icon mat-list-icon>schedule</mat-icon>
+                <div mat-line>Modified</div>
+                <div mat-line>{{process?.modified | date:'short'}}</div>
+              </mat-list-item>
+            </mat-list>
+              <mat-list>
+                <div mat-subheader>Process</div>
+                <mat-list-item>
+                  <mat-icon mat-list-icon>label</mat-icon>
+                  <div mat-line>Docker Image</div>
+                  <div mat-line>{{process?.docker_user}}/{{process?.docker_repository}}:{{process?.docker_version}}</div>
+                </mat-list-item>
+                <mat-list-item>
+                  <mat-icon mat-list-icon>exit_to_app</mat-icon>
+                  <div mat-line>Exit Code</div>
+                  <div mat-line>{{process?.state?.ExitCode}}</div>
+                </mat-list-item>
+                <mat-list-item>
+                  <mat-icon mat-list-icon>block</mat-icon>
+                  <div mat-line>Dead</div>
+                  <div mat-line>{{process?.state?.Dead}}</div>
+                </mat-list-item>
+              </mat-list>
+            </div>
+            
+            <div fxLayout="row wrap" fxLayoutAlign="center center" fxLayoutGap="2px">
+                <div #outTerminal></div>
+                <div #errorTerminal></div>  
+            </div>
+            
+        </div>
+        <div class="offset-top-20"></div>
+    </mat-card-content>
+</mat-card>

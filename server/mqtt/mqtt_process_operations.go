@@ -34,7 +34,7 @@ func (mqtt *mqttManager) StopCamera(configPayload []byte) error {
 	}
 
 	// process found, can delete
-	err = mqtt.processService.Stop(payload.Name)
+	err = mqtt.processService.Stop(payload.Name, models.PrefixRTSPProcess)
 	if err != nil {
 		g.Log.Info("failed to delete process from edge", err)
 		return err

@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { Observable } from 'rxjs';
 import { StreamProcess } from '../models/StreamProcess';
-import { Settings } from '../models/Settings';
+import { DockerImageSummary, Settings } from '../models/Settings';
 import { ImageUpgrade, PullDockerResponse } from '../models/ImageUpgrade';
+import { AppProcess } from '../models/AppProcess';
 
 @Injectable({
   providedIn: 'root'
@@ -37,8 +38,13 @@ export class EdgeService {
     return this.http.post<Settings>(environment.LocalServerURL + "/api/v1/settings", settings);
   }
 
-  getDockerImages(tag:string) {
-    return this.http.get<ImageUpgrade>(environment.LocalServerURL + "/api/v1/dockerimages?tag=" + tag);
+  // camera/device docker images with possible upgrades
+  getDeviceDockerImages(tag:string) {
+    return this.http.get<ImageUpgrade>(environment.LocalServerURL + "/api/v1/devicedockerimages?tag=" + tag);
+  }
+
+  getAllDockerImages() {
+    return this.http.get<[DockerImageSummary]>(environment.LocalServerURL + "/api/v1/alldockerimages")
   }
 
   pullDockerImage(tag:string,version:string) {
@@ -51,5 +57,21 @@ export class EdgeService {
 
   upgradeProcessContainer(process:StreamProcess) {
     return this.http.post<StreamProcess>(environment.LocalServerURL + "/api/v1/processupgrades", process);
+  }
+
+  installApp(app:AppProcess) {
+    return this.http.post<AppProcess>(environment.LocalServerURL + "/api/v1/appprocess", app);
+  }
+
+  removeApp(name:string) {
+    return this.http.delete(environment.LocalServerURL + "/api/v1/appprocess/" + name);
+  }
+
+  listApps() {
+    return this.http.get<[AppProcess]>(environment.LocalServerURL + "/api/v1/appprocesslist");
+  }
+
+  getApp(name:string) {
+    return this.http.get<AppProcess>(environment.LocalServerURL + "/api/v1/appprocess/" + name);
   }
 }

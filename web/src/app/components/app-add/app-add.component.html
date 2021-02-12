@@ -1,0 +1,162 @@
+<mat-toolbar class="menu-bar mat-elevation-z1">
+    <button mat-mini-fab color="primary" routerLink="/local/processes" [queryParams]="{tab: '1'}">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      &nbsp;&nbsp;&nbsp;
+      <h1>Add Application</h1>
+</mat-toolbar>
+
+<mat-card>
+    <mat-card-content>
+        <mat-error>
+            {{errorMessage}}
+        </mat-error>
+
+        <form [formGroup]="appForm" (ngSubmit)="onSubmit()">
+            <p>
+                <mat-form-field appearance="fill" fxFlex="50%">
+                    <mat-label>Name the Application</mat-label>
+                    <input matInput formControlName="name" pattern="^/?[a-zA-Z0-9][a-zA-Z0-9_.-]+$">
+                    <mat-error *ngIf="f.name.errors">
+                        Only alpha characters and underscore allowed. Minimum 3 characters.
+                    </mat-error>
+                </mat-form-field>
+                &nbsp;
+                <mat-form-field appearance="fill" fxFlex="30%">
+                    <mat-label>Runtime</mat-label>
+                    <mat-select formControlName="runtime">
+                        <mat-option value="">Default</mat-option>
+                        <mat-option value="nvidia">Nvidia</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </p>
+            <p>
+                <mat-form-field appearance="fill" fxFlex="33%">
+                    <mat-label>DockerHub Username</mat-label>
+                    <input matInput formControlName="docker_user" placeholder="chryscloud">
+                    <mat-error *ngIf="f.name.errors">
+                        Dockerhub user required
+                    </mat-error>
+                </mat-form-field>&nbsp;
+                <mat-form-field appearance="fill" fxFlex="33%">
+                    <mat-label>DockerHub Repository</mat-label>
+                    <input matInput formControlName="docker_repository" placeholder="">
+                    <mat-error *ngIf="f.name.errors">
+                        Repository required
+                    </mat-error>
+                </mat-form-field>&nbsp;
+                <mat-form-field appearance="fill" fxFlex="33%">
+                    <mat-label>DockerHub Version</mat-label>
+                    <input matInput formControlName="docker_version">
+                    <mat-error *ngIf="f.name.errors">
+                        Version required
+                    </mat-error>
+                </mat-form-field>
+            </p>
+            <mat-divider></mat-divider>
+            <div formArrayName="env_vars">
+                <div>
+                    <div fxFlex="100%"><h3>Environment variables</h3></div>
+                    <div class="example-button-container">
+                        <button color="primary" aria-label="add Environment variables" (click)="addEnvVar()" >
+                            <mat-icon>plus_one</mat-icon>
+                        </button>
+                    </div>
+                </div>
+                <div *ngFor="let envVar of envVars().controls; let i=index" [formGroupName]="i">
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Name</mat-label>
+                        <input matInput formControlName="name">
+                        <mat-error *ngIf="f.name.errors">
+                            Name required
+                        </mat-error>
+                    </mat-form-field>
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Value</mat-label>
+                        <input matInput formControlName="value">
+                        <mat-error *ngIf="f.name.errors">
+                            Value required
+                        </mat-error>
+                    </mat-form-field>
+                    <div fxFlex="10%">
+                        <button mat-mini-fab color="accent" (click)="removeEnvVar(i)"><mat-icon>delete</mat-icon></button>
+                    </div>
+                </div>
+            </div>
+            <mat-divider></mat-divider> 
+            <div formArrayName="port_mappings">
+                <div>
+                    <div fxFlex="100%"><h3>Port mappings</h3></div>
+                    <div class="example-button-container">
+                        <button color="primary" aria-label="add Environment variables" (click)="addPortMap()" >
+                            <mat-icon>plus_one</mat-icon>
+                        </button>
+                    </div>
+                </div>
+                <div *ngFor="let portmap of portMaps().controls; let i=index" [formGroupName]="i">
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Exposed port</mat-label>
+                        <input matInput formControlName="exposed" pattern="[0-9]*">
+                        <mat-error *ngIf="f.name.errors">
+                            Exposed port invalid
+                        </mat-error>
+                    </mat-form-field>
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Map to port</mat-label>
+                        <input matInput formControlName="map_to" pattern="[0-9]*">
+                        <mat-error *ngIf="f.name.errors">
+                            Map to port from exposed invalid
+                        </mat-error>
+                    </mat-form-field>
+                    <div fxFlex="10%">
+                        <button mat-mini-fab color="accent" (click)="removePortMap(i)"><mat-icon>delete</mat-icon></button>
+                    </div>
+                </div>
+            </div>
+            <mat-divider></mat-divider> 
+            <div formArrayName="mount">
+                <div>
+                    <div fxFlex="100%"><h3>Volume mounts</h3></div>
+                    <div class="example-button-container">
+                        <button color="primary" aria-label="add volume mount" (click)="addMount()" >
+                            <mat-icon>plus_one</mat-icon>
+                        </button>
+                    </div>
+                </div>
+                <div *ngFor="let portmap of mounts().controls; let i=index" [formGroupName]="i">
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Host path</mat-label>
+                        <input matInput formControlName="name">
+                        <mat-error *ngIf="f.name.errors">
+                            Host path invalid
+                        </mat-error>
+                    </mat-form-field>
+                    <mat-form-field appearance="fill" fxFlex="50%">
+                        <mat-label>Container path</mat-label>
+                        <input matInput formControlName="value">
+                        <mat-error *ngIf="f.name.errors">
+                            Container path invalid
+                        </mat-error>
+                    </mat-form-field>
+                    <div fxFlex="10%">
+                        <button mat-mini-fab color="accent" (click)="removeMount(i)"><mat-icon>delete</mat-icon></button>
+                    </div>
+                </div>
+            </div>
+            <mat-divider></mat-divider> 
+            <!-- <p>
+                <mat-form-field appearance="fill">
+                    <mat-label>Docker Image</mat-label>
+                    <mat-select [value]="tagSelected">
+                      <mat-option *ngFor="let tag of dockerTags" [value]="tag.value">
+                        {{tag.viewValue}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+            </p> -->
+            <p style="margin-top: 10px;">
+                <button mat-flat-button color="primary" type="submit">Deploy</button>
+            </p>
+        </form>
+    </mat-card-content>
+</mat-card>

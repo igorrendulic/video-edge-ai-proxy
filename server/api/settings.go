@@ -63,7 +63,7 @@ func (sh *settingsHandler) Overwrite(c *gin.Context) {
 }
 
 // DockerImagesLocally finds images that correspond with the image_name and returns has_downloadded or maybe if upgraded needed (newer version available)
-func (sh *settingsHandler) DockerImagesLocally(c *gin.Context) {
+func (sh *settingsHandler) DeviceDockerImagesLocally(c *gin.Context) {
 
 	tagName := c.Query("tag")
 	if tagName == "" {
@@ -72,6 +72,19 @@ func (sh *settingsHandler) DockerImagesLocally(c *gin.Context) {
 	}
 
 	images, err := sh.settingsManager.ListDockerImages(tagName)
+	if err != nil {
+		g.Log.Error("failed to list docker image", err)
+		AbortWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, images)
+}
+
+// Lists all images that are on local machine
+func (sh *settingsHandler) ListAllDockerImages(c *gin.Context) {
+
+	images, err := sh.settingsManager.ListLocalDockerImages()
 	if err != nil {
 		g.Log.Error("failed to list docker image", err)
 		AbortWithError(c, http.StatusBadRequest, err.Error())

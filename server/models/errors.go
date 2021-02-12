@@ -21,4 +21,7 @@ var (
 	ErrProcessNotFound          = errors.New("process not found")
 	ErrProcessNotFoundDatastore = errors.New("process not found in datastore")
 	ErrForbidden                = errors.New("operation not allowed")
+
+	ErrMissingInputParameters = errors.New("missing required parameters")
+	ErrStringTooShort         = errors.New("too short")
 )

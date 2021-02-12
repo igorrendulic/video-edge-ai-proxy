@@ -220,11 +220,13 @@ func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *mod
 }
 
 // Stop - stops the docker container by the name of deviceID and removed from local datastore
-func (pm *ProcessManager) Stop(deviceID string) error {
+// databasePrefix = models.PrefixRTSPProcess or models.PrefixAppProcess
+func (pm *ProcessManager) Stop(deviceID string, databasePrefix string) error {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+
 	container, err := cl.ContainerGet(deviceID)
 	if err != nil {
-		if dockerErrors.IsErrContainerNotFound(err) {
+		if dockerErrors.IsErrNotFound(err) {
 			g.Log.Info("container not found to be stopeed", err)
 			return err
 		}
@@ -240,7 +242,7 @@ func (pm *ProcessManager) Stop(deviceID string) error {
 		}
 	}
 
-	err = pm.storage.Del(models.PrefixRTSPProcess, deviceID)
+	err = pm.storage.Del(databasePrefix, deviceID)
 	if err != nil {
 		g.Log.Error("Failed to delete rtsp proces", err)
 		return err
@@ -354,7 +356,7 @@ func (pm *ProcessManager) Info(deviceID string) (*models.StreamProcess, error) {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
 	container, err := cl.ContainerGet(deviceID)
 	if err != nil {
-		if dockerErrors.IsErrContainerNotFound(err) {
+		if dockerErrors.IsErrNotFound(err) {
 			g.Log.Info("container not found to be stopeed", err)
 			return nil, models.ErrProcessNotFound
 		}

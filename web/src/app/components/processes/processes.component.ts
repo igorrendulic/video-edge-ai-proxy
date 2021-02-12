@@ -1,13 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { EdgeService } from 'src/app/services/edge.service';
 import { StreamProcess } from 'src/app/models/StreamProcess';
-import { GlobalVars } from 'src/app/models/RTSP';
-import { Subject } from 'rxjs';
-import { ImageUpgrade } from 'src/app/models/ImageUpgrade';
-import { semver } from 'semver';
-import { ThrowStmt } from '@angular/compiler';
 import { SelectionModel } from '@angular/cdk/collections';
 import { NotificationsService } from 'angular2-notifications';
+import { AppProcess } from 'src/app/models/AppProcess';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-processes',
@@ -17,25 +14,36 @@ import { NotificationsService } from 'angular2-notifications';
 export class ProcessesComponent implements OnInit {
 
   processes: StreamProcess[] = [];
+  apps:AppProcess[] = [];
   showProcesses:Boolean = false;
+  showApps:Boolean = false;
+  tabIndex = 0;
 
   selection = new SelectionModel<StreamProcess>(true, []);
 
   upgrading:[] = [];
   disabledUpgradeButton:boolean = false;
 
-  constructor(private edgeService:EdgeService, private notifService:NotificationsService) {}
+  constructor(private edgeService:EdgeService, private notifService:NotificationsService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.loadProcesses();
+    // this.loadProcesses();
+    this.loadApps();
     this.getUpgradableProcesses();
+
+    const tabIndex: string = this.route.snapshot.queryParamMap.get('tab');
+    if (tabIndex) {
+      this.tabIndex = Number(tabIndex);
+    }
   }
 
   getUpgradableProcesses() {
     this.edgeService.getRTSPProcessUpgrades().subscribe(data => {
-      console.log(data);
       if (data.length > 0) {
         this.processes = data;
+        this.showProcesses = true;
+      } else {
+        this.showProcesses = false;
       }
     });
   }
@@ -110,14 +118,26 @@ export class ProcessesComponent implements OnInit {
     }
   }
 
-  loadProcesses() {
-    this.edgeService.listRTSP().subscribe(list => {
-      this.processes = list;
-      if (list.length > 0) {
-        this.showProcesses = true;
-      }
+  // loadProcesses() {
+  //   this.edgeService.listRTSP().subscribe(list => {
+  //     this.processes = list;
+  //     if (list.length > 0) {
+  //       this.showProcesses = true;
+  //     }
+  //   }, error => {
+  //     this.showProcesses = false;
+  //     console.error(error);
+  //   })
+  // }
+
+  loadApps() {
+    this.edgeService.listApps().subscribe(apps => {
+      this.apps = apps;
+      if (apps.length > 0) {
+        this.showApps = true;
+      } 
     }, error => {
-      this.showProcesses = false;
+      this.showApps = false;  
       console.error(error);
     })
   }

@@ -23,7 +23,7 @@ import (
 )
 
 // ConfigAPI - configuring RESTapi services
-func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, settingsService *services.SettingsManager, rdb *redis.Client) *gin.Engine {
+func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, settingsService *services.SettingsManager, appService *services.AppProcessManager, rdb *redis.Client) *gin.Engine {
 
 	// if g.Conf.CorsSubConfig.Enabled {
 	router.Use(cors.New(cors.Config{
@@ -35,6 +35,7 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 
 	// APIs
 	processAPI := api.NewRTSPProcessHandler(rdb, processService, settingsService)
+	appsAPI := api.NewAppProcessHandler(rdb, appService, processService, settingsService)
 	settingsAPI := api.NewSettingsHandler(settingsService)
 
 	api := router.Group("/api/v1")
@@ -47,8 +48,13 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 		api.POST("processupgrades", processAPI.UpgradeContainer)
 		api.GET("settings", settingsAPI.Get)
 		api.POST("settings", settingsAPI.Overwrite)
-		api.GET("dockerimages", settingsAPI.DockerImagesLocally)
+		api.GET("devicedockerimages", settingsAPI.DeviceDockerImagesLocally)
+		api.GET("alldockerimages", settingsAPI.ListAllDockerImages)
 		api.GET("dockerpull", settingsAPI.DockerPullImage)
+		api.POST("appprocess", appsAPI.InstallApp)
+		api.DELETE("appprocess/:name", appsAPI.RemoveApp)
+		api.GET("appprocesslist", appsAPI.ListApps)
+		api.GET("appprocess/:name", appsAPI.Info)
 	}
 
 	return router

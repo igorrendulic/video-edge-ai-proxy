@@ -150,7 +150,7 @@ func (ph *rtspProcessHandler) Stop(c *gin.Context) {
 		AbortWithError(c, http.StatusBadRequest, "required device_id")
 		return
 	}
-	err := ph.processManager.Stop(deviceID)
+	err := ph.processManager.Stop(deviceID, models.PrefixRTSPProcess)
 	if err != nil {
 		g.Log.Warn("failed to start process ", deviceID, err)
 		AbortWithError(c, http.StatusConflict, err.Error())

@@ -47,6 +47,10 @@ export class ChrysHttpInterceptor implements HttpInterceptor {
                     this.router.navigate(['/user/login']);
                     return throwError(data);
                 }
+
+                if (error.status == 0) { // server unreachable
+
+                }
                 
                 return throwError(data);
             })
