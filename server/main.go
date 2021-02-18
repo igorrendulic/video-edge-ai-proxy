@@ -139,7 +139,7 @@ func main() {
 	settingsService := services.NewSettingsManager(storage)
 	processService := services.NewProcessManager(storage, rdb)
 	appService := services.NewAppManager(storage, rdb)
-	mqttService := mqtt.NewMqttManager(rdb, settingsService, processService)
+	mqttService := mqtt.NewMqttManager(rdb, settingsService, processService, appService)
 	mqttService.StartGatewayListener()
 	defer mqttService.StopGateway()
 
@@ -236,7 +236,7 @@ func setupRedis() (*redis.Client, error) {
 		status := rdb.Ping()
 		g.Log.Info("redis status: ", status)
 		if status.Err() != nil {
-			g.Log.Warn("waiting for redis to boot up", status.Err().Error)
+			g.Log.Warn("waiting for redis to boot up", status.Err().Error())
 			time.Sleep(3 * time.Second)
 			continue
 		}

@@ -25,6 +25,7 @@ type mqttManager struct {
 	rdb               *redis.Client
 	settingsService   *services.SettingsManager
 	processService    *services.ProcessManager
+	appService        *services.AppProcessManager
 	client            *qtt.Client
 	clientOpts        *qtt.ClientOptions
 	stop              chan bool
@@ -34,11 +35,12 @@ type mqttManager struct {
 	latestDeviceState map[string]*models.StreamProcess
 }
 
-func NewMqttManager(rdb *redis.Client, settingsService *services.SettingsManager, processService *services.ProcessManager) *mqttManager {
+func NewMqttManager(rdb *redis.Client, settingsService *services.SettingsManager, processService *services.ProcessManager, appService *services.AppProcessManager) *mqttManager {
 	return &mqttManager{
 		rdb:               rdb,
 		settingsService:   settingsService,
 		processService:    processService,
+		appService:        appService,
 		latestDeviceState: make(map[string]*models.StreamProcess),
 	}
 }
@@ -56,14 +58,22 @@ func (mqtt *mqttManager) onMessage(client qtt.Client, msg qtt.Message) {
 		g.Log.Error("failed to unmarshal config payload", err, string(msg.Payload()))
 		return
 	}
+
+	// mapping to local process types for cameras
 	operation := ""
-	if edgeConfig.Operation == "a" {
-		operation = models.DeviceOperationStart
-	} else if edgeConfig.Operation == "r" {
-		operation = models.DeviceOperationDelete
+	if edgeConfig.Type == models.ProcessTypeRTSP {
+
+		if edgeConfig.Operation == "a" {
+			operation = models.DeviceOperationStart
+		} else if edgeConfig.Operation == "r" {
+			operation = models.DeviceOperationDelete
+		} else {
+			g.Log.Error("camera command operation not supported: ", edgeConfig.Name, edgeConfig.ImageTag, edgeConfig.Operation)
+			return
+		}
 	} else {
-		g.Log.Error("command operation not supported: ", edgeConfig.Name, edgeConfig.ImageTag, edgeConfig.Operation)
-		return
+		// mapping to local process types for applications
+		operation = edgeConfig.Operation
 	}
 	err = utils.PublishToRedis(mqtt.rdb, edgeConfig.Name, models.MQTTProcessOperation(operation), edgeConfig.Type, msg.Payload())
 	if err != nil {
@@ -142,31 +152,51 @@ func (mqtt *mqttManager) run() error {
 				} else {
 					g.Log.Info("Received message object from redis pubsub for mqtt: ", localMsg.DeviceID)
 					var opErr error
-					if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationAdd) {
+					if localMsg.ProcessType == models.MQTTProcessType(models.ProcessTypeRTSP) {
+						if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationAdd) {
 
-						opErr = mqtt.bindDevice(localMsg.DeviceID, models.MQTTProcessType(models.ProcessTypeRTSP))
+							opErr = mqtt.bindDevice(localMsg.DeviceID, models.MQTTProcessType(models.ProcessTypeRTSP))
 
-					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationRemove) {
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationRemove) {
 
-						opErr = mqtt.unbindDevice(localMsg.DeviceID, models.MQTTProcessType(models.ProcessTypeRTSP))
+							opErr = mqtt.unbindDevice(localMsg.DeviceID, models.MQTTProcessType(models.ProcessTypeRTSP))
 
-					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationUpgradeAvailable) {
-						// TODO: TBD
-						g.Log.Warn("TBD: process operation upgrade available")
-					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationUpgradeFinished) {
-						// TODO: TBD
-						g.Log.Warn("TBD: process operation upgrade completed/finished")
-					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationStart) {
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationUpgradeAvailable) {
+							// TODO: TBD
+							g.Log.Warn("TBD: process operation upgrade available")
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationUpgradeFinished) {
+							// TODO: TBD
+							g.Log.Warn("TBD: process operation upgrade completed/finished")
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationStart) {
 
-						opErr = mqtt.StartCamera(localMsg.Message)
-					} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationDelete) {
+							opErr = mqtt.StartCamera(localMsg.Message)
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationDelete) {
 
-						opErr = mqtt.StopCamera(localMsg.Message)
+							opErr = mqtt.StopCamera(localMsg.Message)
 
-					} else {
-						opErr = errors.New("local message operation not recognized")
-						g.Log.Error("message operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)
+						} else {
+							opErr = errors.New("local message operation not recognized")
+							g.Log.Error("message operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)
+						}
+					} else if localMsg.ProcessType == models.MQTTProcessType(models.ProcessTypeApplication) {
+						// TODO: install (on add), uninstall on remove
+						if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationAdd) {
+
+							payload, siErr := mqtt.PullApplication(localMsg.Message)
+							if siErr != nil {
+								opErr = siErr
+							} else {
+								opErr = mqtt.StartApplication(payload)
+							}
+
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationRemove) {
+							// TODO: TBD
+						} else {
+							opErr = errors.New("local message application operation not recognized")
+							g.Log.Error("message application operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)
+						}
 					}
+
 					if opErr != nil {
 						g.Log.Error("local pubsub gateway msg failed", opErr)
 					}

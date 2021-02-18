@@ -3,6 +3,7 @@ package mqtt
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -160,6 +161,125 @@ func (mqtt *mqttManager) ReportContainersStats() error {
 	if pErr != nil {
 		g.Log.Error("Failed to publish monitoring telemetry", pErr)
 		return pErr
+	}
+	return nil
+}
+
+// PullApplication - pull/refresh docker image
+func (mqtt *mqttManager) PullApplication(configPayload []byte) (*models.EdgeCommandPayload, error) {
+	g.Log.Info("received payload to start installing new app")
+
+	var payload models.EdgeCommandPayload
+	err := json.Unmarshal(configPayload, &payload)
+	if err != nil {
+		g.Log.Error("failed to unmarshal app config payload", err)
+		return nil, err
+	}
+
+	splitted := strings.Split(payload.ImageTag, ":")
+	if len(splitted) == 2 {
+		pullResponse, pullErr := mqtt.settingsService.PullDockerImage(splitted[0], splitted[1])
+		if pullErr != nil {
+			mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "pull failed")
+			g.Log.Error("failed to pull docker app", pullErr, pullResponse)
+			return nil, pullErr
+		}
+	} else {
+		// report error to cloud
+		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "imageTag parse failed")
+		return nil, errors.New("failed to parse imageTag: " + payload.ImageTag)
+	}
+
+	// notify cloud about pulling down the image
+	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), models.ProcessStatusInProgress, "")
+
+	return &payload, nil
+}
+
+// StartApplication - start the application and report status to cloud (this method can assume image has been pulled succesfully)
+func (mqtt *mqttManager) StartApplication(payload *models.EdgeCommandPayload) error {
+
+	dockerUser, dockerRepo, dockerVersion := utils.ImageTagToParts(payload.ImageTag)
+
+	app := &models.AppProcess{
+		Name:                payload.Name,
+		Runtime:             payload.Runtime,
+		DockerHubUser:       dockerUser,
+		DockerhubRepository: dockerRepo,
+		DockerHubVersion:    dockerVersion,
+	}
+
+	var varArgs []*models.VarPair
+	var envVars []*models.VarPair
+	var mounts []*models.VarPair
+	var portMapping []*models.PortMap
+	if len(payload.ArgVars) > 0 {
+		varArgs = utils.StringPairsToVarPairs(payload.ArgVars)
+	}
+	if len(payload.EnvVars) > 0 {
+		envVars = utils.StringPairsToVarPairs(payload.EnvVars)
+	}
+	if len(payload.Mounts) > 0 {
+		mounts = utils.StringPairsToVarPairs(payload.Mounts)
+	}
+	if len(payload.PortMapping) > 0 {
+		portMaps := utils.StringPairsToVarPairs(payload.PortMapping)
+		for _, pair := range portMaps {
+			from, err := strconv.Atoi(pair.Name)
+			to, err := strconv.Atoi(pair.Value)
+			if err != nil {
+				continue
+			}
+			pm := &models.PortMap{
+				Exposed: from,
+				MapTo:   to,
+			}
+			portMapping = append(portMapping, pm)
+		}
+	}
+	app.EnvVars = envVars
+	app.ArgsVars = varArgs
+	app.MountFolders = mounts
+	app.PortMapping = portMapping
+
+	app, err := mqtt.appService.Install(app)
+	if err != nil {
+		g.Log.Error("failed to install application", payload.Name, err)
+		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "install failed")
+		return err
+	}
+
+	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), app.Status, "")
+	return nil
+}
+
+// mqtt notification message to chrys cloud
+func (mqtt *mqttManager) notifyMqtt(appName string, imageTag string, operation models.MQTTProcessOperation, operationType models.MQTTProcessType, status string, msg string) error {
+
+	set, err := mqtt.settingsService.Get()
+	if err != nil {
+		g.Log.Error("failed to retrieve settings", err)
+		return err
+	}
+
+	var message []byte
+
+	if msg != "" {
+		message = []byte(msg)
+	}
+
+	payload := &models.MQTTMessage{
+		DeviceID:         appName,
+		ImageTag:         imageTag,
+		ProcessOperation: operation,
+		ProcessType:      operationType,
+		State:            status,
+		Message:          message,
+	}
+	err = utils.PublishOperationTelemetry(set.GatewayID, (*mqtt.client), payload)
+	if err != nil {
+		g.Log.Error("failed to report operation status to chrys cloud", err)
+		return err
 	}
 	return nil
 }

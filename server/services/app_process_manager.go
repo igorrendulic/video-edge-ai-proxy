@@ -45,7 +45,7 @@ func NewAppManager(storage *Storage, rdb *redis.Client) *AppProcessManager {
 }
 
 // Install - installs the new app
-func (am *AppProcessManager) Install(app *models.AppProcess) error {
+func (am *AppProcessManager) Install(app *models.AppProcess) (*models.AppProcess, error) {
 
 	// installation process
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
@@ -54,7 +54,7 @@ func (am *AppProcessManager) Install(app *models.AppProcess) error {
 	pruneReport, pruneErr := cl.ContainersPrune(fl)
 	if pruneErr != nil {
 		g.Log.Error("container prunning fialed", pruneErr)
-		return pruneErr
+		return nil, pruneErr
 	}
 	g.Log.Info("app prune successfull. Report and space reclaimed", pruneReport.ContainersDeleted, pruneReport.SpaceReclaimed)
 
@@ -134,32 +134,32 @@ func (am *AppProcessManager) Install(app *models.AppProcess) error {
 
 	if ccErr != nil {
 		g.Log.Error("failed to create container ", app.Name, ccErr)
-		return ccErr
+		return nil, ccErr
 	}
 
 	err := cl.ContainerStart(app.Name)
 	if err != nil {
 		g.Log.Error("failed to start container", app.Name, err)
-		return err
+		return nil, err
 	}
 
-	app.Status = "running"
+	app.Status = models.ProcessStatusRunning
 	app.Created = time.Now().Unix() * 1000
 	app.Modified = time.Now().Unix() * 1000
 
 	obj, err := json.Marshal(app)
 	if err != nil {
 		g.Log.Error("failed to marshal process json", err)
-		return err
+		return nil, err
 	}
 
 	err = am.storage.Put(models.PrefixAppProcess, app.Name, obj)
 	if err != nil {
 		g.Log.Error("failed to store process into datastore", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return app, nil
 }
 
 func (am *AppProcessManager) ListApps() ([]*models.AppProcess, error) {

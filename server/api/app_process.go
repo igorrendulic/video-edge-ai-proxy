@@ -75,7 +75,7 @@ func (aph *appProcessHandler) InstallApp(c *gin.Context) {
 		return
 	}
 
-	err = aph.appManager.Install(&apProcess)
+	_, err = aph.appManager.Install(&apProcess)
 	if err != nil {
 		AbortWithError(c, http.StatusInternalServerError, err.Error())
 		return

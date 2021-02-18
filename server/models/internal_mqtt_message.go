@@ -16,6 +16,8 @@ const (
 	DeviceOperationUpgradeAvailable string = "upgrade_avail" // device has an upgrade available
 	DeviceOperationUpgradeFinished  string = "upgrade"       // device has performed an upgrade
 
+	DeviceOperationError string = "error" // device operation failed
+
 	ProcessTypeRTSP        string = "rtsp"
 	ProcessTypeApplication string = "app"
 	ProcessTypeStats       string = "stats"

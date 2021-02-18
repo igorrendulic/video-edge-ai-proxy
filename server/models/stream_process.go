@@ -21,6 +21,18 @@ import (
 
 const (
 	PrefixRTSPProcess = "/rtspprocess/"
+
+	// docker process status mapping
+	ProcessStatusCreated    = "created"
+	ProcessStatusRestarting = "restarting"
+	ProcessStatusRunning    = "running"
+	ProcessStatusRemoving   = "removing"
+	ProcessStatusPaused     = "paused"
+	ProcessStatusExited     = "exited"
+	ProcessStatusDead       = "dead"
+	// added custom status for chrysalis cloud
+	ProcessStatusFailed     = "failed"
+	ProcessStatusInProgress = "in-progress"
 )
 
 type StreamProcess struct {
