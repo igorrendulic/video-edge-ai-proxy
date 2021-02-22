@@ -228,7 +228,7 @@ func (pm *ProcessManager) Stop(deviceID string, databasePrefix string) error {
 	if err != nil {
 		if dockerErrors.IsErrNotFound(err) {
 			g.Log.Info("container not found to be stopeed", err)
-			return err
+			return models.ErrProcessNotFound
 		}
 	}
 

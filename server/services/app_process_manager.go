@@ -133,8 +133,9 @@ func (am *AppProcessManager) Install(app *models.AppProcess) (*models.AppProcess
 	_, ccErr := cl.ContainerCreate(strings.ToLower(app.Name), containerConf, hostConfig, nil)
 
 	if ccErr != nil {
+
 		g.Log.Error("failed to create container ", app.Name, ccErr)
-		return nil, ccErr
+		return nil, models.ErrProcessConflict
 	}
 
 	err := cl.ContainerStart(app.Name)

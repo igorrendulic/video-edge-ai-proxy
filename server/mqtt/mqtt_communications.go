@@ -179,7 +179,7 @@ func (mqtt *mqttManager) run() error {
 							g.Log.Error("message operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)
 						}
 					} else if localMsg.ProcessType == models.MQTTProcessType(models.ProcessTypeApplication) {
-						// TODO: install (on add), uninstall on remove
+						// INSTALL APPLICATION
 						if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationAdd) {
 
 							payload, siErr := mqtt.PullApplication(localMsg.Message)
@@ -190,7 +190,9 @@ func (mqtt *mqttManager) run() error {
 							}
 
 						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationRemove) {
-							// TODO: TBD
+							// DELETE APPLICATION
+							opErr = mqtt.StopApplication(localMsg.Message)
+
 						} else {
 							opErr = errors.New("local message application operation not recognized")
 							g.Log.Error("message application operation not recognized: ", localMsg.ProcessOperation, localMsg.DeviceID, localMsg.ProcessType)

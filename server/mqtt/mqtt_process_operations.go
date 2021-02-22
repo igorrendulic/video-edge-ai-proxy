@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chryscloud/go-microkit-plugins/docker"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/chryscloud/video-edge-ai-proxy/utils"
@@ -176,22 +177,39 @@ func (mqtt *mqttManager) PullApplication(configPayload []byte) (*models.EdgeComm
 		return nil, err
 	}
 
+	// check if app already pulled
+	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+
+	images, err := cl.ImagesList()
+	if err != nil {
+		g.Log.Error("failed to retrieve container list", err)
+		return nil, err
+	}
+
+	for _, im := range images {
+		for _, tag := range im.RepoTags {
+			if tag == payload.ImageTag {
+				return &payload, nil
+			}
+		}
+	}
+
+	// notify cloud about pulling down the image
+	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), models.ProcessStatusInProgress, "Image pull")
+
 	splitted := strings.Split(payload.ImageTag, ":")
 	if len(splitted) == 2 {
 		pullResponse, pullErr := mqtt.settingsService.PullDockerImage(splitted[0], splitted[1])
 		if pullErr != nil {
-			mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "pull failed")
+			mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "Pull failed")
 			g.Log.Error("failed to pull docker app", pullErr, pullResponse)
 			return nil, pullErr
 		}
 	} else {
 		// report error to cloud
-		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "imageTag parse failed")
+		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "ImageTag parse failed")
 		return nil, errors.New("failed to parse imageTag: " + payload.ImageTag)
 	}
-
-	// notify cloud about pulling down the image
-	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), models.ProcessStatusInProgress, "")
 
 	return &payload, nil
 }
@@ -244,12 +262,40 @@ func (mqtt *mqttManager) StartApplication(payload *models.EdgeCommandPayload) er
 
 	app, err := mqtt.appService.Install(app)
 	if err != nil {
+		if err == models.ErrProcessConflict {
+			mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "name conflict")
+			return err
+		}
 		g.Log.Error("failed to install application", payload.Name, err)
-		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "install failed")
+		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "install failed")
 		return err
 	}
 
 	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationAdd), models.MQTTProcessType(payload.Type), app.Status, "")
+	return nil
+}
+
+// stop the application (doesn't remove docker image)
+func (mqtt *mqttManager) StopApplication(configPayload []byte) error {
+	var payload models.EdgeCommandPayload
+	err := json.Unmarshal(configPayload, &payload)
+	if err != nil {
+		g.Log.Error("failed to unmarshal app config payload", err)
+		mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "stop failed")
+		return err
+	}
+
+	err = mqtt.processService.Stop(payload.Name, models.PrefixAppProcess)
+	if err != nil {
+		// only report error if process exists
+		if err != models.ErrProcessNotFound {
+			g.Log.Warn("failed to start process ", payload.Name, err)
+			mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationError), models.MQTTProcessType(payload.Type), models.ProcessStatusFailed, "stop failed")
+			return err
+		}
+	}
+	// publish to chrysalis cloud the change
+	mqtt.notifyMqtt(payload.Name, payload.ImageTag, models.MQTTProcessOperation(models.DeviceOperationRemove), models.MQTTProcessType(payload.Type), models.ProcessStatusExited, "")
 	return nil
 }
 

@@ -67,7 +67,7 @@ func ParseJWTTokenExpirationTime(jwtToken string) (time.Time, error) {
 // 0 - at most one
 // 1 - at least once
 // 2 - exactly once
-func publishTelemetry(gatewayID string, client qtt.Client, qos int, mqttMsg *models.MQTTMessage) error {
+func publishTelemetry(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
 	telemetry := fmt.Sprintf("/devices/%v/events", gatewayID)
 
 	mqttBytes, err := json.Marshal(mqttMsg)
@@ -75,7 +75,8 @@ func publishTelemetry(gatewayID string, client qtt.Client, qos int, mqttMsg *mod
 		g.Log.Error("failed to marshal mqtt message", err)
 		return err
 	}
-	if token := client.Publish(telemetry, byte(qos), true, mqttBytes); token.WaitTimeout(time.Second*5) && token.Error() != nil {
+
+	if token := client.Publish(telemetry, 1, true, mqttBytes); token.WaitTimeout(time.Second*5) && token.Error() != nil {
 		g.Log.Info("failed to publish initial gateway payload", token.Error())
 		return token.Error()
 	}
@@ -84,22 +85,22 @@ func publishTelemetry(gatewayID string, client qtt.Client, qos int, mqttMsg *mod
 
 // Publishing operation telemetry (applicaton and camera related operation such as install, remove, ...)
 func PublishOperationTelemetry(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
-	return publishTelemetry(gatewayID, client, 1, mqttMsg)
+	return publishTelemetry(gatewayID, client, mqttMsg)
 }
 
 // Publish monitoring uses qos 0 (no biggy if we miss an event or two)
 func PublishMonitoringTelemetry(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
-	return publishTelemetry(gatewayID, client, 0, mqttMsg)
+	return publishTelemetry(gatewayID, client, mqttMsg)
 }
 
 // Attaching a device requires qos = 2 (at most once, since it's noted in the chrysalis cloud datastore)
 func AttachDeviceToGateway(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
-	return publishTelemetry(gatewayID, client, 2, mqttMsg)
+	return publishTelemetry(gatewayID, client, mqttMsg)
 }
 
 // Dettaching a device requires qos = 2
 func DetachGatewayDevice(gatewayID string, client qtt.Client, mqttMsg *models.MQTTMessage) error {
-	return publishTelemetry(gatewayID, client, 2, mqttMsg)
+	return publishTelemetry(gatewayID, client, mqttMsg)
 }
 
 // mqttLocalPublish publishing to redis pub/sub to be then forwarded to Chrysalis Cloud over MQTT protocol
