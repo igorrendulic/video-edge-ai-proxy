@@ -38,3 +38,7 @@ class ArchivePacketGroup():
 
     def setStartTimestamp(self, timestamp=None):
         self.start_timestamp = timestamp
+
+
+class ChrysException(Exception):
+    pass

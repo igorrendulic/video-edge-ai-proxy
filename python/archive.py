@@ -104,15 +104,3 @@ class StoreMP4VideoChunks(threading.Thread):
 
         
         output.close()
-
-        # ### INternal test
-        # import pathlib
-        # fp = pathlib.Path(output_file_name)
-        # created_timestamp = int(fp.stat().st_ctime * 1000)
-        # create_human_timestamp = datetime.datetime.fromtimestamp(created_timestamp//1000)
-
-        # filename_human = datetime.datetime.fromtimestamp(start_timestamp//1000)
-        # print("mp4 TS: ", start_timestamp,"created TS: ", created_timestamp, "mp4 human TS: ", filename_human.strftime('%Y-%m-%d %H:%M:%S'), "created human TS: ", create_human_timestamp.strftime('%Y-%m-%d %H:%M:%S'), "File Size: ", fp.stat().st_size)
-
-        # if created_timestamp <= start_timestamp:
-        #     print("BUG BUG BUG! ------------> created timestamp should always be ahead")

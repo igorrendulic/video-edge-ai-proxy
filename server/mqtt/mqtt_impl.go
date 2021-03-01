@@ -3,7 +3,6 @@ package mqtt
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,7 +11,19 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/models"
 	"github.com/chryscloud/video-edge-ai-proxy/utils"
 	badger "github.com/dgraph-io/badger/v2"
+	"github.com/docker/docker/api/types/events"
 )
+
+const (
+	ProcessActionDie   = "die"
+	ProcessActionStart = "start"
+)
+
+type ProcessState struct {
+	Time     int64  // seconds since epoch
+	DeviceID string // deviceID
+	Action   string // process action from docker events
+}
 
 // Check settings and also if MQTT initial connection has been made
 func (mqtt *mqttManager) getMQTTSettings() (*models.Settings, error) {
@@ -57,55 +68,127 @@ func (mqtt *mqttManager) gatewaySubscribers() error {
 }
 
 // detecting device state change and reporting if changes occured
-func (mqtt *mqttManager) changedDeviceState(gatewayID string) error {
-	// report changes of all the stream processes to events (find diff)
-	allDevices, err := mqtt.processService.List()
-	if err != nil {
-		g.Log.Error("failed to list all devices", err)
-		return err
+func (mqtt *mqttManager) changedDeviceState(gatewayID string, message events.Message) error {
+
+	actor := message.Actor
+
+	// fairly complicated logic to handle container restarts and report only true changes, not attempty of restarting the container
+	if deviceID, ok := actor.Attributes["name"]; ok {
+		mqtt.mutex.Lock()
+		defer mqtt.mutex.Unlock()
+
+		var history []events.Message
+		if val, ok := mqtt.processEvents.Load(deviceID); ok {
+			history = val.([]events.Message)
+			if len(history) >= 10 {
+				startIndex := len(history) - 10
+				history = history[startIndex:]
+			}
+			history = append(history, message)
+		} else {
+			history = []events.Message{message}
+		}
+		mqtt.processEvents.Store(deviceID, history)
+
+		// check last value after 5 seconds (avoiding the possible burst of events for a specific container)
+		go func(deviceID string) {
+			time.Sleep(time.Second * 5)
+			if val, ok := mqtt.processEvents.Load(deviceID); ok {
+				history := val.([]events.Message)
+				last := history[len(history)-1]
+				// for _, last := range history {
+				if lastNotified, ok := mqtt.lastProcessEventNotified.Load(deviceID); ok {
+					if mqtt.hasDeviceDifferences(lastNotified.(events.Message), last) {
+						stat := mqtt.deviceActionToStatus(last.Action)
+						rErr := mqtt.reportDeviceStateChange(deviceID, stat)
+						if rErr != nil {
+							g.Log.Error("failed to report device state change", rErr)
+							return
+						}
+						g.Log.Info("device status reported ", stat, deviceID)
+					}
+				} else {
+					mqtt.lastProcessEventNotified.Store(deviceID, last)
+					stat := mqtt.deviceActionToStatus(last.Action)
+					rErr := mqtt.reportDeviceStateChange(deviceID, stat)
+					if rErr != nil {
+						g.Log.Error("failed to report device state change", rErr)
+						return
+					}
+					g.Log.Info("device status reported ", stat, deviceID)
+				}
+			}
+		}(deviceID)
+
 	}
+
+	return nil
+}
+
+// converting docker event name to status
+func (mqtt *mqttManager) deviceActionToStatus(lastAction string) string {
+	stat := models.ProcessStatusRestarting
+
+	switch action := lastAction; action {
+	case ProcessActionDie:
+		stat = models.ProcessStatusRestarting
+	case ProcessActionStart:
+		stat = models.ProcessStatusRunning
+	default:
+		stat = lastAction
+	}
+	return stat
+}
+
+func (mqtt *mqttManager) reportDeviceStateChange(deviceID string, status string) error {
+
+	tp := models.MQTTProcessType(models.ProcessTypeUnknown)
+
+	var imageTag string
+	var rtmpEndpoint string
+	var rtspEndpoint string
+
+	device, err := mqtt.processService.Info(deviceID)
+	if err != nil {
+		// check if application
+		if err == models.ErrProcessNotFoundDatastore {
+			proc, pErr := mqtt.appService.Info(deviceID)
+			if pErr != nil {
+				g.Log.Error("failed to find application for reporting state change", pErr)
+				return pErr
+			}
+			tp = models.MQTTProcessType(models.ProcessTypeApplication)
+			imageTag = utils.ImageTagPartToString(proc.DockerHubUser, proc.DockerhubRepository, proc.DockerHubVersion)
+		} else {
+			g.Log.Error("failed to retrieve device info for reporting state change", err)
+			return err
+		}
+	} else {
+		tp = models.MQTTProcessType(models.ProcessTypeRTSP)
+		rtmpEndpoint = device.RTMPEndpoint
+		rtspEndpoint = device.RTSPEndpoint
+	}
+
 	sett, err := mqtt.settingsService.Get()
 	if err != nil {
 		g.Log.Error("failed to retrieve settings", err)
 		return err
 	}
-	if sett.GatewayID == "" {
-		g.Log.Error("gatewayID not exists in settings")
-		return errors.New("settings do not have gateway id")
-	}
 
-	// check if anything changed from the last report and push changes to chrysalis cloud if it did
-	for _, device := range allDevices {
-		report := false
-		if dev, ok := mqtt.latestDeviceState[device.Name]; ok {
-			// simple check for differences
-			report = mqtt.hasDeviceDifferences(dev, device)
-		} else {
-			// if not processed then send it's status
-			report = true
-		}
-		if report {
-			tp := models.MQTTProcessType(models.ProcessTypeUnknown)
-			if device.RTSPEndpoint != "" {
-				tp = models.MQTTProcessType(models.ProcessTypeRTSP)
-			}
-			mqttMsg := &models.MQTTMessage{
-				DeviceID:         device.Name,
-				ImageTag:         device.ImageTag,
-				RTMPEndpoint:     device.RTMPEndpoint,
-				RTSPConnection:   device.RTSPEndpoint,
-				State:            device.State.Status,
-				Created:          time.Now().UTC().Unix() * 1000,
-				ProcessOperation: models.MQTTProcessOperation(models.DeviceOperationState),
-				ProcessType:      tp,
-			}
-			pErr := utils.PublishMonitoringTelemetry(sett.GatewayID, (*mqtt.client), mqttMsg)
-			if pErr != nil {
-				g.Log.Error("Failed to publish monitoring telemetry", pErr)
-				return pErr
-			}
-			mqtt.latestDeviceState[device.Name] = device
-		}
+	mqttMsg := &models.MQTTMessage{
+		DeviceID:         deviceID,
+		ImageTag:         imageTag,
+		RTMPEndpoint:     rtmpEndpoint,
+		RTSPConnection:   rtspEndpoint,
+		State:            status,
+		Created:          time.Now().UTC().Unix() * 1000,
+		ProcessOperation: models.MQTTProcessOperation(models.DeviceOperationState),
+		ProcessType:      tp,
+	}
+	pErr := utils.PublishMonitoringTelemetry(sett.GatewayID, (*mqtt.client), mqttMsg)
+	if pErr != nil {
+		g.Log.Error("Failed to publish monitoring telemetry", pErr)
+		return pErr
 	}
 	return nil
 }
@@ -233,15 +316,15 @@ func (mqtt *mqttManager) bindAllDevices() error {
 
 // hasDeviceDifferences checks if the previously reported device has changed (only important fields check):
 // status, state, rtsp link, rtmp link, containerID
-func (mqtt *mqttManager) hasDeviceDifferences(storedDeviceState *models.StreamProcess, current *models.StreamProcess) bool {
-	h1 := extractDeviceSignature(storedDeviceState)
+func (mqtt *mqttManager) hasDeviceDifferences(stored events.Message, current events.Message) bool {
+	h1 := extractDeviceSignature(stored)
 	h2 := extractDeviceSignature(current)
 	return h1 != h2
 }
 
 // creates StreamProcess signature for it's main fields
-func extractDeviceSignature(device *models.StreamProcess) string {
-	payload := device.Status + device.ContainerID + fmt.Sprintf("%d", device.Created) + device.ImageTag + device.Name + device.RTMPEndpoint + device.RTSPEndpoint
+func extractDeviceSignature(processMsg events.Message) string {
+	payload := processMsg.Status + processMsg.Actor.ID
 	h := md5.New()
 	h.Write([]byte(payload))
 	return hex.EncodeToString(h.Sum(nil))

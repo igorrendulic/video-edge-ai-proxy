@@ -50,11 +50,20 @@ class RTSPtoRTMP(threading.Thread):
         for c, n in zip(nodes, nodes[1:]):
             c.link_to(n)
 
+    def join(self):
+        threading.Thread.join(self)
+        if self.exc:
+            raise self.exc
+
     def run(self):
         global RedisLastAccessPrefix    
 
         # cleanup all redis memory
-        memoryCleanup(self.redis_conn, self.device_id)
+        try:
+            memoryCleanup(self.redis_conn, self.device_id)
+        except Exception as ex:
+            self.exc = ex
+            os._exit(1)
 
         current_packet_group = []
         flush_current_packet_group = False
@@ -91,6 +100,7 @@ class RTSPtoRTMP(threading.Thread):
 
             except Exception as ex:
                 print("failed to connect to RTSP camera", ex)
+                self.exc = ex
                 os._exit(1)
             
             keyframe_found = False
@@ -134,7 +144,12 @@ class RTSPtoRTMP(threading.Thread):
                     continue
 
                 # method to push packet to the redis in a in-memory buffer
-                packetToInMemoryBuffer(self.redis_conn, self.__memory_buffer_size, self.device_id, self.in_container, packet)
+                try:
+                    packetToInMemoryBuffer(self.redis_conn, self.__memory_buffer_size, self.device_id, self.in_container, packet)
+                except Exception as ex:
+                    self.exc = ex
+                    print(ex)
+                    os._exit(1)
 
                 '''
                 Live Redis Settings

@@ -66,3 +66,8 @@ func ImageTagToParts(imageTag string) (string, string, string) {
 
 	return imageTag, "", ""
 }
+
+// combine image parts to complete image tag string
+func ImageTagPartToString(dockerUser, dockerRepository, dockerImageVersion string) string {
+	return dockerUser + "/" + dockerRepository + ":" + dockerImageVersion
+}

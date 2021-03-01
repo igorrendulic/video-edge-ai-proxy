@@ -1,9 +1,12 @@
 package mqtt
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"sync"
 	"time"
 
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
@@ -11,6 +14,10 @@ import (
 	"github.com/chryscloud/video-edge-ai-proxy/services"
 	"github.com/chryscloud/video-edge-ai-proxy/utils"
 	badger "github.com/dgraph-io/badger/v2"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	qtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-redis/redis/v7"
 )
@@ -22,26 +29,30 @@ const (
 
 // ProcessManager - start, stop of docker containers
 type mqttManager struct {
-	rdb               *redis.Client
-	settingsService   *services.SettingsManager
-	processService    *services.ProcessManager
-	appService        *services.AppProcessManager
-	client            *qtt.Client
-	clientOpts        *qtt.ClientOptions
-	stop              chan bool
-	gatewayID         string
-	projectID         string
-	jwt               string
-	latestDeviceState map[string]*models.StreamProcess
+	rdb                      *redis.Client
+	settingsService          *services.SettingsManager
+	processService           *services.ProcessManager
+	appService               *services.AppProcessManager
+	client                   *qtt.Client
+	clientOpts               *qtt.ClientOptions
+	stop                     chan bool
+	gatewayID                string
+	projectID                string
+	jwt                      string
+	processEvents            sync.Map
+	lastProcessEventNotified sync.Map
+	mutex                    sync.Mutex
 }
 
 func NewMqttManager(rdb *redis.Client, settingsService *services.SettingsManager, processService *services.ProcessManager, appService *services.AppProcessManager) *mqttManager {
 	return &mqttManager{
-		rdb:               rdb,
-		settingsService:   settingsService,
-		processService:    processService,
-		appService:        appService,
-		latestDeviceState: make(map[string]*models.StreamProcess),
+		rdb:                      rdb,
+		settingsService:          settingsService,
+		processService:           processService,
+		appService:               appService,
+		processEvents:            sync.Map{},
+		lastProcessEventNotified: sync.Map{},
+		mutex:                    sync.Mutex{},
 	}
 }
 
@@ -207,18 +218,31 @@ func (mqtt *mqttManager) run() error {
 		}
 	}(sub)
 
-	deviceStateDelay := time.Second * 15
+	// deviceStateDelay := time.Second * 15
 	go func() {
+		cl, err := client.NewClient("unix:///var/run/docker.sock", "1.40", nil, nil)
+		if err != nil {
+			g.Log.Error("failed to initialize docker event listener")
+			return
+		}
+		filterArgs := filters.NewArgs()
+		filterArgs.Add("type", events.ContainerEventType)
+		opts := types.EventsOptions{
+			Filters: filterArgs,
+		}
+		messages, errs := cl.Events(context.Background(), opts)
+
 		for {
-			err := mqtt.changedDeviceState(mqtt.gatewayID)
-			if err != nil {
-				g.Log.Error("failed to check device state changes", err)
-			}
 			select {
-			case <-time.After(deviceStateDelay):
-			case <-mqtt.stop:
-				g.Log.Info("Device state change job stopped")
-				return
+			case err := <-errs:
+				if err != nil && err != io.EOF {
+					g.Log.Error(err)
+				}
+			case e := <-messages:
+				dsErr := mqtt.changedDeviceState(mqtt.gatewayID, e)
+				if dsErr != nil {
+					g.Log.Error("failed to update device state", e, dsErr)
+				}
 			}
 		}
 	}()
