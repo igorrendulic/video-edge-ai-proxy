@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   chrysedgeportal:
-    image: chryscloud/chrysedgeportal:0.0.8.3
+    image: chryscloud/chrysedgeportal:0.0.8.4
     build: web/
     depends_on:
       - chrysedgeserver
@@ -11,7 +11,7 @@ services:
     networks:
       - chrysnet
   chrysedgeserver:
-    image: chryscloud/chrysedgeserver:0.0.8.3
+    image: chryscloud/chrysedgeserver:0.0.8.4
     build: server/
     restart: always
     depends_on:
