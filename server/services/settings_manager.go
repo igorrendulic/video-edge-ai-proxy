@@ -16,7 +16,7 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -160,13 +160,28 @@ func (sm *SettingsManager) updateSettingsWithMQTTCredentials(sysInfo *models.Sys
 		sysInfo.GatewayID = settings.GatewayID
 		sysInfo.RegistryID = settings.RegistryID
 	}
-
-	resp, apiErr := utils.CallAPIWithBody(sm.apiClient, "POST", g.Conf.API.Endpoint+"/api/v1/edge/credentials", sysInfo, settings.EdgeKey, settings.EdgeSecret)
-	if apiErr != nil {
-		g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)
-		// AbortWithError(c, http.StatusUnauthorized, "Failed to validate credentials with Chryscloud")
-		return nil, apiErr
+	var resp []byte
+	for i := 0; i < 3; i++ {
+		response, apiErr := utils.CallAPIWithBody(sm.apiClient, "POST", g.Conf.API.Endpoint+"/api/v1/edge/credentials", sysInfo, settings.EdgeKey, settings.EdgeSecret)
+		if apiErr != nil {
+			if apiErr == models.ErrForbidden {
+				g.Log.Warn("authentication failed communicating with chrysalis cloud", apiErr)
+				return nil, apiErr
+			}
+			if apiErr == models.ErrProcessNotFound {
+				// if not found, then try without gatewayID and registryID
+				sysInfo.GatewayID = ""
+				sysInfo.RegistryID = ""
+				continue
+			}
+			g.Log.Error("Failed to validate credentials with chrys cloud", apiErr)
+			// AbortWithError(c, http.StatusUnauthorized, "Failed to validate credentials with Chryscloud")
+			return nil, apiErr
+		}
+		resp = response
+		break
 	}
+
 	var cloudResponse models.EdgeConnectCredentials
 	mErr := json.Unmarshal(resp, &cloudResponse)
 	if mErr != nil {
@@ -237,6 +252,14 @@ func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrad
 		return nil, err
 	}
 
+	// adding support for finding highest version for specific architecture
+	versionSuffix := ""
+	arch := runtime.GOARCH
+	arch = "arm64"
+	if suffix, ok := ArchitectureSuffixMap[arch]; ok {
+		versionSuffix = suffix
+	}
+
 	// getting local tags
 	localTags := make([]string, 0)
 
@@ -248,6 +271,11 @@ func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrad
 				splitted := strings.Split(tag, ":")
 				if len(splitted) == 2 {
 					v := strings.Trim(splitted[1], "")
+					if versionSuffix != "" {
+						if !strings.Contains(v, versionSuffix) {
+							continue
+						}
+					}
 					if v != "latest" { // ignore latest versions
 						localTags = append(localTags, v)
 					}
@@ -294,13 +322,20 @@ func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrad
 // PullDockerImage - pull docker image from dockerhub
 func (sm *SettingsManager) PullDockerImage(name, version string) (*models.PullDockerResponse, error) {
 	cl := docker.NewSocketClient(docker.Log(g.Log), docker.Host("unix:///var/run/docker.sock"))
+
+	arch := runtime.GOARCH
+	versionSuffix := ""
+	if suffix, ok := ArchitectureSuffixMap[arch]; ok {
+		versionSuffix = suffix
+	}
+	version = version + versionSuffix
+
 	resp, err := cl.ImagePullDockerHub(name, version, "", "")
 	if err != nil {
 		g.Log.Error("failed to pull image from dockerhub", name, version, err)
 		return nil, err
 	}
 
-	fmt.Printf("%v\n", resp)
 	g.Log.Info(resp)
 	camType := "unknown"
 	if ct, ok := models.ImageTagVersionToCameraType[name]; ok {
@@ -336,9 +371,22 @@ func (sm *SettingsManager) findHighestVersion(versionsRaw []string) *version.Ver
 	if len(versionsRaw) == 0 {
 		return nil
 	}
+
+	// adding support for finding highest version for specific architecture
+	versionSuffix := ""
+	arch := runtime.GOARCH
+	if suffix, ok := ArchitectureSuffixMap[arch]; ok {
+		versionSuffix = suffix
+	}
+
 	versions := make([]*version.Version, 0)
 	for _, raw := range versionsRaw {
-		v, _ := version.NewVersion(raw)
+		ver := raw
+		if versionSuffix != "" && !strings.Contains(raw, versionSuffix) {
+			// skip versions not matching cpu architecture
+			continue
+		}
+		v, _ := version.NewVersion(ver)
 		if v != nil {
 			versions = append(versions, v)
 		}

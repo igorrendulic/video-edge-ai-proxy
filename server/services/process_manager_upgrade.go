@@ -22,13 +22,17 @@ func (pm *ProcessManager) FindUpgrades(imageUpgrade *models.ImageUpgrade) ([]*mo
 		return nil, err
 	}
 
+	upgradesAvailable := make([]*models.StreamProcess, 0)
+
+	if imageUpgrade.CurrentVersion == "" {
+		return upgradesAvailable, nil
+	}
+
 	currentVersion, vErr := version.NewVersion(imageUpgrade.CurrentVersion)
 	if vErr != nil {
 		g.Log.Error("version conversion failed", imageUpgrade.CurrentVersion, vErr)
 		return nil, vErr
 	}
-
-	upgradesAvailable := make([]*models.StreamProcess, 0)
 
 	for _, proc := range processes {
 		imgTag := proc.ImageTag

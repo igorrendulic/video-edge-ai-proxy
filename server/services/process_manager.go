@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,16 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	dockerErrors "github.com/docker/docker/client"
 	"github.com/go-redis/redis/v7"
+)
+
+const (
+	// Resource: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
+	ArchitectureAmd64 = "amd64"
+	ArchitectureArm64 = "arm64"
+)
+
+var (
+	ArchitectureSuffixMap = map[string]string{ArchitectureAmd64: "", ArchitectureArm64: "-arm64v8"}
 )
 
 // ProcessManager - start, stop of docker containers
@@ -49,6 +60,13 @@ func NewProcessManager(storage *Storage, rdb *redis.Client) *ProcessManager {
 // Start - starts the docker container with rtsp, device_id and possibly rtmp environment variables.
 // Restarts always when something goes wrong within the streaming process
 func (pm *ProcessManager) Start(process *models.StreamProcess, imageUpgrade *models.ImageUpgrade) error {
+
+	// detect architecture
+	arch := runtime.GOARCH
+
+	if _, ok := ArchitectureSuffixMap[arch]; !ok {
+		return errors.New("architecture currently not supported")
+	}
 
 	if process.Name == "" || process.RTSPEndpoint == "" {
 		return errors.New("required parameters missing")
@@ -373,7 +391,6 @@ func (pm *ProcessManager) Info(deviceID string) (*models.StreamProcess, error) {
 
 	sp, err := pm.storage.Get(models.PrefixRTSPProcess, deviceID)
 	if err != nil {
-		g.Log.Error("failed to find device with name", deviceID, err)
 		return nil, models.ErrProcessNotFoundDatastore
 	}
 	var status models.StreamProcess

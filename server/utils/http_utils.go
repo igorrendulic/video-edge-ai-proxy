@@ -47,6 +47,10 @@ func CallAPIWithBody(apiClient *resty.Client, method string, fullEndpoint string
 		g.Log.Error("invalid response code from chrysalis API: ", resp.StatusCode(), string(resp.Body()))
 		return nil, models.ErrForbidden
 	}
+	if resp.StatusCode() == 404 {
+		g.Log.Warn("chrysalis cloud cannot find gateway probably", resp.StatusCode(), string(resp.Body()))
+		return nil, models.ErrProcessNotFound
+	}
 
 	return nil, errors.New(fmt.Sprintf("invalid response code from chrysalis API: %d, %v", resp.StatusCode(), string(resp.Body())))
 }

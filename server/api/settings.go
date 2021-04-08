@@ -56,6 +56,10 @@ func (sh *settingsHandler) Overwrite(c *gin.Context) {
 
 	newSett, err := sh.settingsManager.Overwrite(&settings)
 	if err != nil {
+		if err == models.ErrForbidden {
+			AbortWithError(c, http.StatusExpectationFailed, "Failed to authenticate with Chrysalis Cloud. Make sure your key and secret are correct.")
+			return
+		}
 		AbortWithError(c, http.StatusExpectationFailed, "Failed to store settings. Make sure you have an internet connection and try again")
 		return
 	}
