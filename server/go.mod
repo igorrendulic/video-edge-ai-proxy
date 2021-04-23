@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/adjust/rmq/v2 v2.0.0-20200523123200-98c5e969f342
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/chryscloud/go-microkit-plugins v1.0.8
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
@@ -20,6 +21,8 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/rs/xid v1.2.1
 	github.com/stretchr/testify v1.6.1 // indirect
+	github.com/swaggo/gin-swagger v1.2.0
+	github.com/swaggo/swag v1.6.7
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	google.golang.org/genproto v0.0.0-20200916143405-f6a2fa72f0c4 // indirect
 	google.golang.org/grpc v1.35.0

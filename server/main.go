@@ -26,6 +26,7 @@ import (
 
 	cfg "github.com/chryscloud/go-microkit-plugins/config"
 	msrv "github.com/chryscloud/go-microkit-plugins/server"
+	"github.com/chryscloud/video-edge-ai-proxy/docs"
 	"github.com/chryscloud/video-edge-ai-proxy/globals"
 	g "github.com/chryscloud/video-edge-ai-proxy/globals"
 	"github.com/chryscloud/video-edge-ai-proxy/grpcapi"
@@ -40,10 +41,10 @@ import (
 )
 
 var (
-	grpcServer    *grpc.Server
-	grpcConn      net.Listener
-	defaultDBPath = "/data/chrysalis"
-	// defaultDBPath = "/home/igor/Downloads/temp/chrysedge/data"
+	grpcServer *grpc.Server
+	grpcConn   net.Listener
+	// defaultDBPath = "/data/chrysalis"
+	defaultDBPath = "/home/igor/Downloads/temp/chrysedge/data"
 )
 
 func main() {
@@ -64,6 +65,13 @@ func main() {
 	if configFile == "" {
 		configFile = defaultDBPath + "/conf.yaml"
 	}
+
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Chrysalis Edge PM API"
+	docs.SwaggerInfo.Description = "Chrysalis Edge Process Management API"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8909"
+	docs.SwaggerInfo.Schemes = []string{"http"}
 
 	// server wait to shutdown monitoring channels
 	done := make(chan bool, 1)

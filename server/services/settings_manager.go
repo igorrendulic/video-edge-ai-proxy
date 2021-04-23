@@ -255,7 +255,6 @@ func (sm *SettingsManager) ListDockerImages(nameTag string) (*models.ImageUpgrad
 	// adding support for finding highest version for specific architecture
 	versionSuffix := ""
 	arch := runtime.GOARCH
-	arch = "arm64"
 	if suffix, ok := ArchitectureSuffixMap[arch]; ok {
 		versionSuffix = suffix
 	}

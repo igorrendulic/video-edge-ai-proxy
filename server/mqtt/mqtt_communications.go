@@ -184,6 +184,15 @@ func (mqtt *mqttManager) run() error {
 						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceOperationDelete) {
 
 							opErr = mqtt.StopCamera(localMsg.Message)
+						} else if localMsg.ProcessOperation == models.MQTTProcessOperation(models.DeviceInternalTesting) {
+
+							// **********
+							// internal testing operations
+							// **********
+							testErr := mqtt.reportDeviceStateChange(localMsg.DeviceID, models.ProcessStatusRestarting)
+							if testErr != nil {
+								g.Log.Error("TEST FAILED ------------------> ", testErr)
+							}
 
 						} else {
 							opErr = errors.New("local message operation not recognized")
@@ -218,7 +227,7 @@ func (mqtt *mqttManager) run() error {
 		}
 	}(sub)
 
-	// deviceStateDelay := time.Second * 15
+	// reporting device changes
 	go func() {
 		cl, err := client.NewClient("unix:///var/run/docker.sock", "1.40", nil, nil)
 		if err != nil {
@@ -230,6 +239,7 @@ func (mqtt *mqttManager) run() error {
 		opts := types.EventsOptions{
 			Filters: filterArgs,
 		}
+		// listening to events of docker
 		messages, errs := cl.Events(context.Background(), opts)
 
 		for {
@@ -264,7 +274,7 @@ func (mqtt *mqttManager) run() error {
 		}
 	}()
 
-	// reporting very first container stats right after first 10 seconds (sort of a ground trouth)
+	// reporting very first container stats right after first 10 seconds (sort of a ground truth)
 	time.AfterFunc(time.Second*10, func() {
 		err := mqtt.ReportContainersStats()
 		if err != nil {

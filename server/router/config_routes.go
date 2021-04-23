@@ -20,6 +20,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v7"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 // ConfigAPI - configuring RESTapi services
@@ -37,6 +39,7 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 	processAPI := api.NewRTSPProcessHandler(rdb, processService, settingsService)
 	appsAPI := api.NewAppProcessHandler(rdb, appService, processService, settingsService)
 	settingsAPI := api.NewSettingsHandler(settingsService)
+	testAPI := api.NewTestApiHandler(rdb)
 
 	api := router.Group("/api/v1")
 	{
@@ -56,6 +59,13 @@ func ConfigAPI(router *gin.Engine, processService *services.ProcessManager, sett
 		api.GET("appprocesslist", appsAPI.ListApps)
 		api.GET("appprocess/:name", appsAPI.Info)
 	}
+
+	testapimqtt := router.Group("/testmqtt/api/v1")
+	{
+		testapimqtt.GET("/devicestatus", testAPI.TestMqttDeviceStatus)
+	}
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }
